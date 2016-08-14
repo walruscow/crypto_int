@@ -43,6 +43,11 @@ impl U256 {
     pub fn zero() -> U256 {
         U256::literal(vec![0, 0, 0, 0])
     }
+
+    pub fn is_zero(&self) -> bool {
+        self.digits[0] == 0 && self.digits[1] == 0 &&
+            self.digits[2] == 0 && self.digits[3] == 0
+    }
 }
 
 impl ops::Add for U256 {
