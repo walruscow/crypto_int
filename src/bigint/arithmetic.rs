@@ -1,8 +1,9 @@
-use std::num::Wrapping;
-
-type W = Wrapping<u64>;
+use std::cmp::Ordering;
+use std::u64;
 
 // TODO: Add overflow checks? Or is overflow useful?
+// TODO: Use slices instead of vectors?
+// TODO: In place additions?
 
 // TODO: I'm not sure this will overflow correctly..
 pub fn add_big_ints(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
@@ -76,5 +77,106 @@ fn mul_ints(a: u64, b: u64) -> (u64, u64) {
     let z0 = a0 * b0;
     let z1 = a0 * b1 + b0 * a1;
     let z2 = a1 * b1;
-    (z0 + (z1 << 32), z2 + (z1 >> 32))
+
+    let low_bits = z0.wrapping_add(z1 << 32);
+    let high_bits = if low_bits < z0 {
+        z2 + (z1 >> 32) + 1
+    } else {
+        z2 + (z1 >> 32)
+    };
+    (low_bits, high_bits)
+}
+
+pub fn cmp_big_ints(a: &Vec<u64>, b: &Vec<u64>) -> Ordering {
+    assert_eq!(a.len(), b.len());
+    let mut order = Ordering::Equal;
+    for (x, y) in a.iter().zip(b.iter()).rev() {
+        if x > y {
+            order = match order {
+                Ordering::Equal => Ordering::Greater,
+                _ => order,
+            };
+        } else if y > x {
+            order = match order {
+                Ordering::Equal => Ordering::Less,
+                _ => order,
+            };
+        }
+    }
+    order
+}
+
+fn last_nonzero(vec: &Vec<u64>) -> (usize, u64) {
+    for (i, v) in vec.iter().enumerate().rev() {
+        if *v != 0 {
+            return (i, *v);
+        }
+    }
+    (0, vec[0])
+}
+
+pub fn rem_big_ints(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
+    println!("{:?}, {:?}", a, b);
+    // This is a % b, of course.
+    // TODO: Should we handle this and try to make it take the same time?
+    match cmp_big_ints(&a, &b) {
+        Ordering::Equal => return vec![0, 0, 0, 0],
+        Ordering::Less => return a.clone(),
+        Ordering::Greater => (), // do nothing :)
+    }
+
+    let (a_idx, a_byte) = last_nonzero(&a);
+    let (b_idx, b_byte) = last_nonzero(&b);
+
+    let mut a_new = a.clone();
+    if a_idx > b_idx {
+        println!("Index greater");
+        // A is a whole thing bigger, figure out how much to get there
+        let mut mul: u64;
+        if a_byte > b_byte {
+            mul = u64::MAX;
+            println!("Got mul: int_max {}", mul);
+        } else {
+            let m = u64::MAX / b_byte;
+            mul = if m == 0 {
+                a_byte
+            } else if m == 1 {
+                a_byte
+            } else {
+                a_byte * (m - 1)
+            };
+            println!("Got mul: {}", mul);
+        }
+        let mut b_new = mul_big_ints(&b, &vec![mul, 0, 0, 0])[..4].to_vec();
+        while cmp_big_ints(&b_new, &b) == Ordering::Greater {
+            println!("Subbing b down");
+            b_new = sub_big_ints(&b_new ,&b);
+        }
+        a_new = sub_big_ints(&a, &b_new);
+        if cmp_big_ints(&a_new, &b) == Ordering::Less {
+            return a_new;
+        }
+        println!("Hey that");
+    }
+
+    // idx should be the same
+    println!("Index: {} {}", a_idx, b_idx);
+    while cmp_big_ints(&b, &a_new) == Ordering::Less {
+        println!("Hay {} {}", a_idx, b_idx);
+        println!("b: {:?} a: {:?}", b, a_new);
+        let (a_idx, a_byte) = last_nonzero(&a_new);
+        let mul = a_byte / b_byte;
+        let b_new = if mul > 1 {
+            println!("mul: {}", mul);
+            mul_big_ints(&b, &vec![mul, 0, 0, 0])[..4].to_vec()
+        } else {
+            b.clone()
+        };
+        //println!("b_new: {:?}", b_new);
+        a_new = sub_big_ints(&a_new, &b_new);
+        //println!("a_new: {:?}", b_new);
+    }
+
+    //println!("Returning a");
+    return a_new;
 }

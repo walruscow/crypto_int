@@ -12,6 +12,7 @@ pub struct U256 {
     digits: Vec<u64>,
 }
 
+// TODO: Remainder, GT, LT, Quotient (division)
 impl U256 {
     // TODO: We can do away with this once we are sure the 4 len requirement
     // isn't being violated
@@ -75,6 +76,12 @@ impl ops::Mul for U256 {
     }
 }
 
+impl ops::Rem for U256 {
+    type Output = U256;
+    fn rem(self, rhs: U256) -> U256 {
+        U256::literal(arithmetic::rem_big_ints(&self.digits, &rhs.digits))
+    }
+}
 
 impl fmt::Display for U256 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -92,6 +99,14 @@ impl cmp::PartialEq for U256 {
 
     fn ne(&self, other: &U256) -> bool {
         self.digits != other.digits
+    }
+}
+
+impl cmp::Eq for U256 {}
+
+impl cmp::PartialOrd for U256 {
+    fn partial_cmp(&self, other: &U256) -> Option<cmp::Ordering> {
+        Some(arithmetic::cmp_big_ints(&self.digits, &other.digits))
     }
 }
 
@@ -217,4 +232,39 @@ mod test {
         assert_eq!(x, y * U256::from_u64(1));
     }
 
+    #[test]
+    fn remainder() {
+        //let x = U256::from_u64(13);
+        //let y = U256::from_u64(7);
+        //assert_eq!(y % x, U256::from_u64(7));
+
+        //for i in 0..60 {
+        //    let x = U256::from_u64(13 + 7 * i);
+        //    let y = U256::from_u64(7);
+        //    assert_eq!(x % y, U256::from_u64(6));
+        //}
+
+        let x = U256::from_bytes_be(vec![
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0xbc, 0x86, 0x00, 0x8f, 0xff, 0x85, 0x3f, 0x8e,
+            0xc6, 0x0a, 0x0b, 0xb4, 0xd0, 0x36, 0x26, 0xfc,
+            0x44, 0x7c, 0xf3, 0x2a, 0x45, 0x2c, 0xd0, 0x1c,
+        ]);
+
+        let y = U256::from_bytes_be(vec![
+            0x1b, 0x50, 0xdd, 0xa8, 0x70, 0x14, 0xa2, 0x7d,
+            0x4b, 0xd4, 0xe8, 0xcb, 0x1d, 0xfa, 0xe7, 0xfc,
+            0xbe, 0x5a, 0x68, 0x53, 0x24, 0x01, 0x92, 0xc1,
+            0x55, 0x22, 0xbc, 0x55, 0x2e, 0xc5, 0xc8, 0x9a,
+        ]);
+
+
+        let expected = U256::from_bytes_be(vec![
+            0x00, 0x00, 0x00, 0x00, 0x45, 0x14, 0xe6, 0x13,
+            0x71, 0x84, 0x35, 0x15, 0xa3, 0x66, 0x89, 0x8a,
+            0x55, 0xe6, 0x70, 0x29, 0xb9, 0xaf, 0x7c, 0xb8,
+            0x38, 0x2c, 0x43, 0xd8, 0xec, 0xf6, 0xfb, 0x6a,
+        ]);
+        assert_eq!(y % x, expected);
+    }
 }
