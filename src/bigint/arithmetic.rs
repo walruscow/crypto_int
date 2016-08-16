@@ -106,6 +106,23 @@ pub fn cmp_big_ints(a: &Vec<u64>, b: &Vec<u64>) -> Ordering {
     order
 }
 
+pub fn shl_big_ints(a: &Vec<u64>, shift: usize) -> Vec<u64> {
+    assert!(shift < 64);
+    if shift == 0 {
+        return a.clone();
+    }
+    // Create mask of shift high bits
+    let mask = (!0u64) << (64 - shift);
+    // lowest bits just get shifted.
+    let mut new_vec: Vec<u64> = Vec::with_capacity(4);
+    new_vec.push(a[0] << shift);
+    for (i, bits) in a.iter().enumerate().skip(1) {
+        let last_high_bits = ((a[i - 1] & mask) >> (64 - shift));
+        new_vec.push((*bits << shift) | last_high_bits);
+    }
+    new_vec
+}
+
 fn last_nonzero(vec: &Vec<u64>) -> (usize, u64) {
     for (i, v) in vec.iter().enumerate().rev() {
         if *v != 0 {
@@ -116,7 +133,6 @@ fn last_nonzero(vec: &Vec<u64>) -> (usize, u64) {
 }
 
 pub fn rem_big_ints(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
-    println!("{:?}, {:?}", a, b);
     // This is a % b, of course.
     // TODO: Should we handle this and try to make it take the same time?
     match cmp_big_ints(&a, &b) {
@@ -125,58 +141,18 @@ pub fn rem_big_ints(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
         Ordering::Greater => (), // do nothing :)
     }
 
-    let (a_idx, a_byte) = last_nonzero(&a);
-    let (b_idx, b_byte) = last_nonzero(&b);
-
-    let mut a_new = a.clone();
-    if a_idx > b_idx {
-        println!("Index greater");
-        // A is a whole thing bigger, figure out how much to get there
-        let mut mul: u64;
-        if a_byte > b_byte {
-            mul = u64::MAX;
-            println!("Got mul: int_max {}", mul);
-        } else {
-            let m = u64::MAX / b_byte;
-            mul = if m == 0 {
-                a_byte
-            } else if m == 1 {
-                a_byte
-            } else {
-                a_byte * (m - 1)
-            };
-            println!("Got mul: {}", mul);
+    let mut new_a = a.clone();
+    while cmp_big_ints(&b, &new_a) == Ordering::Less {
+        let mut new_b = b.clone();
+        let mut old_b = b.clone();
+        // TODO: Don't do this in a loop... please.
+        while cmp_big_ints(&new_b, &new_a) == Ordering::Less {
+            // Shift left by one
+            old_b = new_b;
+            new_b = shl_big_ints(&old_b, 1);
         }
-        let mut b_new = mul_big_ints(&b, &vec![mul, 0, 0, 0])[..4].to_vec();
-        while cmp_big_ints(&b_new, &b) == Ordering::Greater {
-            println!("Subbing b down");
-            b_new = sub_big_ints(&b_new ,&b);
-        }
-        a_new = sub_big_ints(&a, &b_new);
-        if cmp_big_ints(&a_new, &b) == Ordering::Less {
-            return a_new;
-        }
-        println!("Hey that");
+        new_a = sub_big_ints(&new_a, &old_b);
     }
 
-    // idx should be the same
-    println!("Index: {} {}", a_idx, b_idx);
-    while cmp_big_ints(&b, &a_new) == Ordering::Less {
-        println!("Hay {} {}", a_idx, b_idx);
-        println!("b: {:?} a: {:?}", b, a_new);
-        let (a_idx, a_byte) = last_nonzero(&a_new);
-        let mul = a_byte / b_byte;
-        let b_new = if mul > 1 {
-            println!("mul: {}", mul);
-            mul_big_ints(&b, &vec![mul, 0, 0, 0])[..4].to_vec()
-        } else {
-            b.clone()
-        };
-        //println!("b_new: {:?}", b_new);
-        a_new = sub_big_ints(&a_new, &b_new);
-        //println!("a_new: {:?}", b_new);
-    }
-
-    //println!("Returning a");
-    return a_new;
+    new_a
 }
