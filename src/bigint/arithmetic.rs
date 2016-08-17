@@ -3,9 +3,7 @@ use std::u64;
 
 // TODO: Add overflow checks? Or is overflow useful?
 // TODO: Use slices instead of vectors?
-// TODO: In place additions?
-
-// TODO: I'm not sure this will overflow correctly..
+// TODO: In place operations?
 pub fn add_big_ints(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
     assert_eq!(a.len(), b.len());
     let mut overflow = false;
@@ -78,8 +76,8 @@ fn mul_ints(a: u64, b: u64) -> (u64, u64) {
     let z1 = a0 * b1 + b0 * a1;
     let z2 = a1 * b1;
 
-    let low_bits = z0.wrapping_add(z1 << 32);
-    let high_bits = if low_bits < z0 {
+    let (low_bits, overflow) = z0.overflowing_add(z1 << 32);
+    let high_bits = if overflow {
         z2 + (z1 >> 32) + 1
     } else {
         z2 + (z1 >> 32)
@@ -106,6 +104,7 @@ pub fn cmp_big_ints(a: &Vec<u64>, b: &Vec<u64>) -> Ordering {
     order
 }
 
+// TODO: Handle 64 <= shift < 256
 pub fn shl_big_ints(a: &Vec<u64>, shift: usize) -> Vec<u64> {
     assert!(shift < 64);
     if shift == 0 {
@@ -117,42 +116,53 @@ pub fn shl_big_ints(a: &Vec<u64>, shift: usize) -> Vec<u64> {
     let mut new_vec: Vec<u64> = Vec::with_capacity(4);
     new_vec.push(a[0] << shift);
     for (i, bits) in a.iter().enumerate().skip(1) {
-        let last_high_bits = ((a[i - 1] & mask) >> (64 - shift));
+        let last_high_bits = (a[i - 1] & mask) >> (64 - shift);
         new_vec.push((*bits << shift) | last_high_bits);
     }
     new_vec
 }
 
-fn last_nonzero(vec: &Vec<u64>) -> (usize, u64) {
-    for (i, v) in vec.iter().enumerate().rev() {
-        if *v != 0 {
-            return (i, *v);
+fn high_bit(n: u64) -> usize {
+    let mut high_bit = 0;
+    for idx in 0..64 {
+        if n & (1 << idx) != 0 {
+            high_bit = idx + 1
         }
     }
-    (0, vec[0])
+    high_bit
+}
+
+fn get_msb_idx(a: &Vec<u64>) -> usize {
+    let mut idx = 0;
+    for (i, val) in a.iter().enumerate() {
+        let x = high_bit(*val);
+        if x != 0 {
+            idx = i * 64 + x;
+        }
+    }
+    idx
 }
 
 pub fn rem_big_ints(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
-    // This is a % b, of course.
-    // TODO: Should we handle this and try to make it take the same time?
-    match cmp_big_ints(&a, &b) {
-        Ordering::Equal => return vec![0, 0, 0, 0],
-        Ordering::Less => return a.clone(),
-        Ordering::Greater => (), // do nothing :)
-    }
+    let mut a = a.clone();
+    let b_msb_idx = get_msb_idx(&b);
 
-    let mut new_a = a.clone();
-    while cmp_big_ints(&b, &new_a) == Ordering::Less {
-        let mut new_b = b.clone();
-        let mut old_b = b.clone();
-        // TODO: Don't do this in a loop... please.
-        while cmp_big_ints(&new_b, &new_a) == Ordering::Less {
-            // Shift left by one
-            old_b = new_b;
-            new_b = shl_big_ints(&old_b, 1);
+    loop {
+        match cmp_big_ints(&b, &a) {
+            Ordering::Equal => return vec![0, 0, 0, 0],
+            Ordering::Greater => return a,
+            Ordering::Less => (),
         }
-        new_a = sub_big_ints(&new_a, &old_b);
-    }
 
-    new_a
+        let a_msb_idx = get_msb_idx(&a);
+        let shifted_b = if a_msb_idx > b_msb_idx {
+            shl_big_ints(&b, a_msb_idx - b_msb_idx - 1)
+        } else {
+            b.clone()
+        };
+        a = sub_big_ints(&a, &shifted_b);
+        if cmp_big_ints(&a, &shifted_b) == Ordering::Equal {
+            a = sub_big_ints(&a, &shifted_b);
+        }
+    }
 }
