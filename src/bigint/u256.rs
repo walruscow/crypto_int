@@ -55,7 +55,7 @@ impl ops::Add for U256 {
     type Output = U256;
 
     fn add(self, rhs: U256) -> U256 {
-        U256::literal(arithmetic::add_big_ints(&self.digits, &rhs.digits))
+        U256::literal(arithmetic::add(&self.digits, &rhs.digits))
     }
 }
 
@@ -63,7 +63,7 @@ impl ops::Sub for U256 {
     type Output = U256;
 
     fn sub(self, rhs: U256) -> U256 {
-        U256::literal(arithmetic::sub_big_ints(&self.digits, &rhs.digits))
+        U256::literal(arithmetic::sub(&self.digits, &rhs.digits))
     }
 }
 
@@ -71,7 +71,7 @@ impl ops::Mul for U256 {
     type Output = U256;
 
     fn mul(self, rhs: U256) -> U256 {
-        let v = arithmetic::mul_big_ints(&self.digits, &rhs.digits);
+        let v = arithmetic::mul(&self.digits, &rhs.digits);
         U256::literal(v[..4].to_vec())
     }
 }
@@ -79,7 +79,23 @@ impl ops::Mul for U256 {
 impl ops::Rem for U256 {
     type Output = U256;
     fn rem(self, rhs: U256) -> U256 {
-        U256::literal(arithmetic::rem_big_ints(&self.digits, &rhs.digits))
+        let (_, rem) = arithmetic::div_rem(&self.digits, &rhs.digits);
+        U256::literal(rem)
+    }
+}
+
+impl ops::Div for U256 {
+    type Output = U256;
+    fn div(self, rhs: U256) -> U256 {
+        let (quotient, _) = arithmetic::div_rem(&self.digits, &rhs.digits);
+        U256::literal(quotient)
+    }
+}
+
+impl ops::Shl<usize> for U256 {
+    type Output = U256;
+    fn shl(self, rhs: usize) -> U256 {
+        U256::literal(arithmetic::shl(&self.digits, rhs))
     }
 }
 
@@ -106,7 +122,7 @@ impl cmp::Eq for U256 {}
 
 impl cmp::PartialOrd for U256 {
     fn partial_cmp(&self, other: &U256) -> Option<cmp::Ordering> {
-        Some(arithmetic::cmp_big_ints(&self.digits, &other.digits))
+        Some(arithmetic::cmp(&self.digits, &other.digits))
     }
 }
 
@@ -267,4 +283,64 @@ mod test {
         ]);
         assert_eq!(y % x, expected);
     }
+
+    #[test]
+    fn division() {
+
+        for i in 0..45 {
+            for j in 0..15 {
+                let x = U256::from_u64(i);
+                let y = U256::from_u64(j + 1);
+                assert_eq!(x / y, U256::from_u64(i / (j + 1)));
+            }
+        }
+
+
+        let x = U256::from_bytes_be(vec![
+            0x1b, 0xcc, 0x2c, 0x7b, 0x2c, 0x29, 0x41, 0x9d,
+            0x16, 0xb8, 0x07, 0xcf, 0x3c, 0x41, 0x44, 0xba,
+            0x5f, 0x4a, 0x89, 0xf6, 0xd0, 0x34, 0xdb, 0xc7,
+            0x21, 0x0a, 0x23, 0x28, 0xac, 0x0e, 0x53, 0x04,
+        ]);
+
+        let y = U256::from_bytes_be(vec![
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x1c, 0xdc, 0xda,
+            0x32, 0xcf, 0x64, 0x03, 0xd0, 0xea, 0xe4, 0x85,
+            0x1a, 0x80, 0x29, 0x3c, 0xb2, 0x4f, 0x32, 0x3f,
+        ]);
+
+
+        let expected = U256::from_bytes_be(vec![
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0xf6, 0x8d, 0x74, 0xc3, 0xf6,
+            0x77, 0x71, 0xf1, 0x3d, 0x16, 0x46, 0x9e, 0x17,
+        ]);
+        assert_eq!(x / y, expected);
+    }
+
+    #[test]
+    fn shl() {
+        let x = U256::from_u64(1);
+        let y = U256::from_u64(64);
+        assert_eq!(x << 6, y);
+
+        let x = U256::from_bytes_be(vec![
+            0x1b, 0xcc, 0x2c, 0x7b, 0x2c, 0x29, 0x41, 0x9d,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x21, 0x0a, 0x23, 0x28, 0xac, 0x0e, 0x53, 0x04,
+        ]);
+
+        let y = U256::from_bytes_be(vec![
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x21,
+            0x0a, 0x23, 0x28, 0xac, 0x0e, 0x53, 0x04, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ]);
+
+        assert_eq!(x << 72, y);
+    }
+
 }
