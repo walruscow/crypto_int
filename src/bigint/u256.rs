@@ -12,13 +12,17 @@ pub struct U256 {
     digits: Vec<u64>,
 }
 
-// TODO: Remainder, GT, LT, Quotient (division)
+// TODO
+// shr
+// BitOr
+// BitAnd
+// BitXor
+// Not
+// *Assign
 impl U256 {
-    // TODO: We can do away with this once we are sure the 4 len requirement
-    // isn't being violated
     fn literal(digits: Vec<u64>) -> U256 {
         // 4 * 64 == 256
-        assert_eq!(digits.len(), 4);
+        debug_assert_eq!(digits.len(), 4);
         U256 {
             digits: digits,
         }
@@ -29,7 +33,7 @@ impl U256 {
     }
 
     pub fn from_bytes_be(bytes: Vec<u8>) -> U256 {
-        assert_eq!(bytes.len(), 32);
+        debug_assert_eq!(bytes.len(), 32);
         let mut digits: Vec<u64> = Vec::with_capacity(4);
         for chunk in bytes.chunks(8).rev() {
             let mut x = 0u64;
@@ -53,7 +57,6 @@ impl U256 {
 
 impl ops::Add for U256 {
     type Output = U256;
-
     fn add(self, rhs: U256) -> U256 {
         U256::literal(arithmetic::add(&self.digits, &rhs.digits))
     }
@@ -61,7 +64,6 @@ impl ops::Add for U256 {
 
 impl ops::Sub for U256 {
     type Output = U256;
-
     fn sub(self, rhs: U256) -> U256 {
         U256::literal(arithmetic::sub(&self.digits, &rhs.digits))
     }
@@ -69,7 +71,6 @@ impl ops::Sub for U256 {
 
 impl ops::Mul for U256 {
     type Output = U256;
-
     fn mul(self, rhs: U256) -> U256 {
         let v = arithmetic::mul(&self.digits, &rhs.digits);
         U256::literal(v[..4].to_vec())
@@ -120,9 +121,15 @@ impl cmp::PartialEq for U256 {
 
 impl cmp::Eq for U256 {}
 
+impl cmp::Ord for U256 {
+    fn cmp(&self, other: &U256) -> cmp::Ordering {
+        arithmetic::cmp(&self.digits, &other.digits)
+    }
+}
+
 impl cmp::PartialOrd for U256 {
     fn partial_cmp(&self, other: &U256) -> Option<cmp::Ordering> {
-        Some(arithmetic::cmp(&self.digits, &other.digits))
+        Some(self.cmp(&other))
     }
 }
 

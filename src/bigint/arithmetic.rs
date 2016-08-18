@@ -33,7 +33,6 @@ pub fn sub(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
     }).collect()
 }
 
-// Oh god...
 pub fn mul(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
     assert_eq!(a.len(), b.len());
     if a.len() == 1 {
@@ -50,7 +49,7 @@ pub fn mul(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
 
     let (low_mid, high_mid) = z1.split_at(z1.len() / 2);
     let (mut low_mid, mut high_mid) = (low_mid.to_vec(), high_mid.to_vec());
-    // Now push 0s onto the front of low_mid, and onto the back of high_mid
+
     let mut low_result: Vec<u64> = Vec::new();
     while low_result.len() < a0.len() {
         low_result.push(0);
