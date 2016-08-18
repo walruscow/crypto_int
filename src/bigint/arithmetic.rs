@@ -112,7 +112,7 @@ pub fn shl(a: &Vec<u64>, shift: usize) -> Vec<u64> {
     // Create mask of shift high bits
     let lead = shift / 64;
     // lowest bits just get shifted.
-    let mut new_vec: Vec<u64> = Vec::with_capacity(4);
+    let mut new_vec: Vec<u64> = Vec::with_capacity(a.len());
     for _ in 0..lead {
         new_vec.push(0);
     }
