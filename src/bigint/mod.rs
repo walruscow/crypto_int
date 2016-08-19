@@ -1,3 +1,5 @@
 mod arithmetic;
-pub mod u512;
-pub mod u256;
+mod u512;
+mod u256;
+
+pub use self::u512::U512;
