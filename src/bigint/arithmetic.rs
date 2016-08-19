@@ -6,7 +6,7 @@ use std::cmp::Ordering;
 pub fn add(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
     assert_eq!(a.len(), b.len());
     let mut overflow = false;
-    a.iter().zip(b.iter()).map(move |(x, y)| {
+    a.iter().zip(b.iter()).enumerate().map(move |(i, (x, y))| {
         let digit = if overflow {
             x.wrapping_add(*y).wrapping_add(1)
         } else {
@@ -14,6 +14,11 @@ pub fn add(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
         };
         // Digit overflowed iff result is less than either of the operands
         overflow = digit < *x;
+        if overflow && i == a.len()-1 {
+            println!("Gotcha!");
+        } else if i == a.len()-1 {
+            println!("Nope");
+        }
         digit
     }).collect()
 }
@@ -33,6 +38,8 @@ pub fn sub(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
     }).collect()
 }
 
+// TODO: The issue is that some of the add() operations can overflow here,
+// causing one bit to be dropped.
 pub fn mul(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
     assert_eq!(a.len(), b.len());
     if a.len() == 1 {
@@ -44,6 +51,7 @@ pub fn mul(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
     let (b0, b1) = b.split_at(b.len() / 2);
     let (b0, b1) = (b0.to_vec(), b1.to_vec());
     let z0 = mul(&a0, &b0);
+    // TODO: Handle overflow
     let z1 = add(&mul(&a0, &b1), &mul(&a1, &b0));
     let z2 = mul(&a1, &b1);
 
@@ -59,6 +67,7 @@ pub fn mul(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
         high_mid.push(0);
     }
 
+    // TODO: Handle oveflow
     let mut low_result = add(&low_result, &z0);
     let mut high_result = add(&z2, &high_mid);
     low_result.append(&mut high_result);
@@ -71,8 +80,15 @@ fn mul_ints(a: u64, b: u64) -> (u64, u64) {
     let (b1, b0) = ((b >> 32), b & 0xffffffff);
 
     let z0 = a0 * b0;
-    let z1 = a0 * b1 + b0 * a1;
-    let z2 = a1 * b1;
+    // z1 is the middle bits. The low bits in z1 are added to the
+    // high bits of z0, and the high bits in z1 are added to the low
+    // bits of z2
+    let (z1, overflow) = (a0 * b1).overflowing_add(b0 * a1);
+    let z2 = if overflow {
+        a1 * b1 + (1 << 32)
+    } else {
+        a1 * b1
+    };
 
     let (low_bits, overflow) = z0.overflowing_add(z1 << 32);
     let high_bits = if overflow {
