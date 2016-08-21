@@ -57,9 +57,7 @@ pub fn mul(a: &[u64], b: &[u64]) -> Vec<u64> {
         return vec![low, high];
     }
     let (a0, a1) = a.split_at(a.len() / 2);
-    let (a0, a1) = (a0.to_vec(), a1.to_vec());
     let (b0, b1) = b.split_at(b.len() / 2);
-    let (b0, b1) = (b0.to_vec(), b1.to_vec());
 
     let z0 = mul(&a0, &b0);
     let z1 = {
@@ -69,28 +67,23 @@ pub fn mul(a: &[u64], b: &[u64]) -> Vec<u64> {
         }
         m1
     };
-    let z2 = mul(&a1, &b1);
+    let mut z2 = mul(&a1, &b1);
 
     let (low_mid, high_mid) = z1.split_at(a0.len());
-    let (mut low_mid, mut high_mid) = (low_mid.to_vec(), high_mid.to_vec());
 
     let mut low_result: Vec<u64> = Vec::with_capacity(z1.len());
     while low_result.len() < a0.len() {
         low_result.push(0);
     }
-    low_result.append(&mut low_mid);
-
-    while high_mid.len() < z2.len() {
-        high_mid.push(0);
-    }
+    low_result.extend_from_slice(&low_mid);
 
     let overflow = add(&mut low_result, &z0);
-    add(&mut high_mid, &z2);
+    add(&mut z2, &high_mid);
     if overflow {
-        add(&mut high_mid, &vec![1]);
+        add(&mut z2, &vec![1]);
     }
 
-    low_result.append(&mut high_mid);
+    low_result.append(&mut z2);
     low_result
 }
 
