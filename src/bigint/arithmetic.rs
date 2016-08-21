@@ -250,6 +250,9 @@ pub fn div_rem(a: &[u64], b: &[u64], quot: &mut[u64], rem: &mut[u64]) {
         match cmp(&b, &rem) {
             Ordering::Equal => {
                 quot[0] |= 1;
+                for x in rem.iter_mut() {
+                    *x = 0;
+                }
                 break;
             },
             Ordering::Greater => break,

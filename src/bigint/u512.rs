@@ -6,6 +6,8 @@ use std::ops;
 
 use super::arithmetic;
 
+/// TODO: Basic operations with u64 as well.
+
 #[derive(Copy, Clone, Debug)]
 pub struct U512 {
     // These are stored with the least significant 64 bits first.
@@ -24,6 +26,7 @@ impl U512 {
         U512::literal([x, 0, 0, 0, 0, 0, 0, 0])
     }
 
+    // TODO: Take a slice, not a vec.
     pub fn from_bytes_be(bytes: Vec<u8>) -> U512 {
         assert!(bytes.len() <= 64);
         let mut bytes = bytes;
@@ -220,7 +223,7 @@ impl ops::Not for U512 {
 
 impl fmt::Display for U512 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // TODO: Think of a better way to print this...
+        // TODO: Print only what is required...
         write!(f, "{:0>#018x}{:0>16x}{:0>16x}{:0>16x}",
                self.digits[3], self.digits[2],
                self.digits[1], self.digits[0])

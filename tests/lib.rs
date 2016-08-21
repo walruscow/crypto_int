@@ -39,13 +39,6 @@ fn byte_str_to_u512(s: &str) -> U512 {
 }
 
 #[test]
-fn basic() {
-    let x = U512::from_u64(10);
-    let y = U512::from_bytes_be(vec![0x0a]);
-    assert_eq!(U512::from_u64(20), x + y);
-}
-
-#[test]
 fn addition() {
     let file = match File::open("./tests/addition.data") {
         Ok(fh) => fh,
@@ -53,6 +46,7 @@ fn addition() {
     };
 
     let file = BufReader::new(file);
+    let zero = U512::zero();
     for line in file.lines() {
         let line = match line {
             Ok(l) => l,
@@ -63,6 +57,7 @@ fn addition() {
         let y = byte_str_to_u512(v[1].trim());
         let ans = byte_str_to_u512(v[2].trim());
         assert_eq!(x + y, ans);
+        assert_eq!(x + zero, x);
     }
 }
 
@@ -74,6 +69,7 @@ fn subtraction() {
     };
 
     let file = BufReader::new(file);
+    let zero = U512::zero();
     for line in file.lines() {
         let line = match line {
             Ok(l) => l,
@@ -84,6 +80,7 @@ fn subtraction() {
         let y = byte_str_to_u512(v[1].trim());
         let ans = byte_str_to_u512(v[2].trim());
         assert_eq!(x - y, ans);
+        assert_eq!(x - x, zero);
     }
 }
 
@@ -95,6 +92,7 @@ fn multiplication() {
     };
 
     let file = BufReader::new(file);
+    let one = U512::from_u64(1);
     for line in file.lines() {
         let line = match line {
             Ok(l) => l,
@@ -105,6 +103,7 @@ fn multiplication() {
         let y = byte_str_to_u512(v[1].trim());
         let ans = byte_str_to_u512(v[2].trim());
         assert_eq!(x * y, ans);
+        assert_eq!(x * one, x);
     }
 }
 
@@ -116,6 +115,7 @@ fn division() {
     };
 
     let file = BufReader::new(file);
+    let one = U512::from_u64(1);
     for line in file.lines() {
         let line = match line {
             Ok(l) => l,
@@ -126,6 +126,8 @@ fn division() {
         let y = byte_str_to_u512(v[1].trim());
         let ans = byte_str_to_u512(v[2].trim());
         assert_eq!(x / y, ans);
+        assert_eq!(x / x, one);
+        assert_eq!(x / one, x);
     }
 }
 
@@ -137,6 +139,8 @@ fn remainder() {
     };
 
     let file = BufReader::new(file);
+    let zero = U512::zero();
+    let one = U512::from_u64(1);
     for line in file.lines() {
         let line = match line {
             Ok(l) => l,
@@ -147,6 +151,8 @@ fn remainder() {
         let y = byte_str_to_u512(v[1].trim());
         let ans = byte_str_to_u512(v[2].trim());
         assert_eq!(x % y, ans);
+        assert_eq!(x % x, zero);
+        assert_eq!(x % one, zero);
     }
 }
 
@@ -171,6 +177,7 @@ fn shr() {
         };
         let ans = byte_str_to_u512(v[2].trim());
         assert_eq!(x >> y, ans);
+        assert_eq!(x >> 0, x);
     }
 }
 
@@ -195,6 +202,7 @@ fn shl() {
         };
         let ans = byte_str_to_u512(v[2].trim());
         assert_eq!(x << y, ans);
+        assert_eq!(x << 0, x);
     }
 }
 
@@ -216,6 +224,7 @@ fn and() {
         let y = byte_str_to_u512(v[1].trim());
         let ans = byte_str_to_u512(v[2].trim());
         assert_eq!(x & y, ans);
+        assert_eq!(x & x, x);
     }
 }
 
@@ -237,6 +246,7 @@ fn or() {
         let y = byte_str_to_u512(v[1].trim());
         let ans = byte_str_to_u512(v[2].trim());
         assert_eq!(x | y, ans);
+        assert_eq!(x | x, x);
     }
 }
 
@@ -248,6 +258,7 @@ fn xor() {
     };
 
     let file = BufReader::new(file);
+    let zero = U512::zero();
     for line in file.lines() {
         let line = match line {
             Ok(l) => l,
@@ -258,5 +269,6 @@ fn xor() {
         let y = byte_str_to_u512(v[1].trim());
         let ans = byte_str_to_u512(v[2].trim());
         assert_eq!(x ^ y, ans);
+        assert_eq!(x ^ x, zero);
     }
 }
