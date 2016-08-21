@@ -56,8 +56,13 @@ impl U512 {
     }
 
     pub fn is_zero(&self) -> bool {
-        self.digits[0] == 0 && self.digits[1] == 0 &&
-            self.digits[2] == 0 && self.digits[3] == 0
+        let mut all_zero = true;
+        for x in &self.digits {
+            if *x != 0 {
+                all_zero = false;
+            }
+        }
+        all_zero
     }
 }
 
