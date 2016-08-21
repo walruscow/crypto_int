@@ -63,8 +63,15 @@ impl U512 {
 
 impl ops::Add for U512 {
     type Output = U512;
-    fn add(self, rhs: U512) -> U512 {
-        U512::literal(arithmetic::add_create(&self.digits, &rhs.digits))
+    fn add(mut self, rhs: U512) -> U512 {
+        arithmetic::add(&mut self.digits, &rhs.digits);
+        self
+    }
+}
+
+impl ops::AddAssign for U512 {
+    fn add_assign(&mut self, rhs: U512) {
+        arithmetic::add(&mut self.digits, &rhs.digits);
     }
 }
 
