@@ -91,25 +91,49 @@ impl ops::SubAssign for U512 {
 
 impl ops::Mul for U512 {
     type Output = U512;
-    fn mul(self, rhs: U512) -> U512 {
-        let v = arithmetic::mul(&self.digits, &rhs.digits);
-        U512::literal(v[..8].to_vec())
+    fn mul(mut self, rhs: U512) -> U512 {
+        self.digits = arithmetic::mul(&self.digits, &rhs.digits);
+        self.digits.truncate(8);
+        self
+    }
+}
+
+impl ops::MulAssign for U512 {
+    fn mul_assign(&mut self, rhs: U512) {
+        self.digits = arithmetic::mul(&self.digits, &rhs.digits);
+        self.digits.truncate(8);
     }
 }
 
 impl ops::Rem for U512 {
     type Output = U512;
-    fn rem(self, rhs: U512) -> U512 {
+    fn rem(mut self, rhs: U512) -> U512 {
         let (_, rem) = arithmetic::div_rem(&self.digits, &rhs.digits);
-        U512::literal(rem)
+        self.digits = rem;
+        self
+    }
+}
+
+impl ops::RemAssign for U512 {
+    fn rem_assign(&mut self, rhs: U512) {
+        let (_, rem) = arithmetic::div_rem(&self.digits, &rhs.digits);
+        self.digits = rem;
     }
 }
 
 impl ops::Div for U512 {
     type Output = U512;
-    fn div(self, rhs: U512) -> U512 {
+    fn div(mut self, rhs: U512) -> U512 {
         let (quotient, _) = arithmetic::div_rem(&self.digits, &rhs.digits);
-        U512::literal(quotient)
+        self.digits = quotient;
+        self
+    }
+}
+
+impl ops::DivAssign for U512 {
+    fn div_assign(&mut self, rhs: U512) {
+        let (quotient, _) = arithmetic::div_rem(&self.digits, &rhs.digits);
+        self.digits = quotient;
     }
 }
 
