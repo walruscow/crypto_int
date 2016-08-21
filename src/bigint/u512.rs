@@ -161,6 +161,20 @@ impl ops::ShlAssign<usize> for U512 {
     }
 }
 
+impl ops::Shr<usize> for U512 {
+    type Output = U512;
+    fn shr(mut self, rhs: usize) -> U512 {
+        arithmetic::shr(&mut self.digits, rhs);
+        self
+    }
+}
+
+impl ops::ShrAssign<usize> for U512 {
+    fn shr_assign(&mut self, rhs: usize) {
+        arithmetic::shr(&mut self.digits, rhs);
+    }
+}
+
 impl fmt::Display for U512 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // TODO: Think of a better way to print this...
@@ -268,10 +282,11 @@ mod test {
     }
 
     #[test]
-    fn shl() {
+    fn shifts() {
         let x = U512::from_u64(1);
         let y = U512::from_u64(64);
         assert_eq!(x << 6, y);
+        assert_eq!(y >> 6, x);
 
         let x = U512::from_bytes_be(vec![
             0x1b, 0xcc, 0x2c, 0x7b, 0x2c, 0x29, 0x41, 0x9d,
@@ -290,5 +305,6 @@ mod test {
         ]);
 
         assert_eq!(x << 72, y);
+        assert_eq!(y >> 72, x);
     }
 }

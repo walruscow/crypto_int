@@ -170,7 +170,7 @@ fn shl_to(a: &[u64], out: &mut[u64], shift: usize) {
     shl(out, shift);
 }
 
-pub fn shl(a: &mut [u64], shift: usize) {
+pub fn shl(a: &mut[u64], shift: usize) {
     assert!(shift < 64 * a.len());
     if shift == 0 {
         return;
@@ -190,6 +190,36 @@ pub fn shl(a: &mut [u64], shift: usize) {
     a[digits_shifted] = a[0] << shift;
     for idx in 0..digits_shifted {
         a[idx] = 0;
+    }
+}
+
+// Shorthand to save a heap allocation where we can
+fn shr_to(a: &[u64], out: &mut[u64], shift: usize) {
+    out.clone_from_slice(a);
+    shr(out, shift);
+}
+
+pub fn shr(a: &mut[u64], shift: usize) {
+    assert!(shift < 64 * a.len());
+    if shift == 0 {
+        return;
+    }
+
+    let len = a.len();
+    // This is how many high digits will be zeroed out
+    let digits_zeroed = shift / 64;
+    // All digits past this are 0 due to shifting them out
+    let last_nonzero_digit = len - 1 - digits_zeroed;
+    let shift = shift % 64;
+
+    for idx in 0..(last_nonzero_digit) {
+        let low_bits = a[idx + digits_zeroed] >> shift;
+        let high_bits = a[idx  + digits_zeroed + 1] << (64 - shift);
+        a[idx] = high_bits | low_bits;
+    }
+    a[last_nonzero_digit] = a[len - 1] >> shift;
+    for val in &mut a[last_nonzero_digit+1..] {
+        *val = 0;
     }
 }
 
