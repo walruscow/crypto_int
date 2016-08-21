@@ -193,12 +193,6 @@ pub fn shl(a: &mut[u64], shift: usize) {
     }
 }
 
-// Shorthand to save a heap allocation where we can
-fn shr_to(a: &[u64], out: &mut[u64], shift: usize) {
-    out.clone_from_slice(a);
-    shr(out, shift);
-}
-
 pub fn shr(a: &mut[u64], shift: usize) {
     assert!(shift < 64 * a.len());
     if shift == 0 {
@@ -266,7 +260,8 @@ pub fn div_rem(a: &[u64], b: &[u64], quot: &mut[u64], rem: &mut[u64]) {
             sub(rem, &shifted_b);
             shift_amount += 1;
         } else {
-            shl_to(b, &mut shifted_b, shift_amount);
+            // We can undo like this because we know we didn't push the msb off.
+            shr(&mut shifted_b, 1);
             sub(rem, &shifted_b);
         }
         let num_idx = shift_amount / 64;
