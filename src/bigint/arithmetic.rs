@@ -26,7 +26,7 @@ pub fn add(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
     }).collect()
 }
 
-pub fn add_o(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
+pub fn add_o(a: &Vec<u64>, b: &Vec<u64>) -> (Vec<u64>, bool) {
 
     let short: &Vec<u64>;
     let long: &Vec<u64>;
@@ -61,11 +61,7 @@ pub fn add_o(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
         answer.push(digit);
     }
 
-    if overflow {
-        answer.push(1);
-    }
-
-    answer
+    (answer, overflow)
 }
 
 pub fn sub(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
@@ -95,7 +91,7 @@ pub fn mul(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
     let (b0, b1) = (b0.to_vec(), b1.to_vec());
 
     let z0 = mul(&a0, &b0);
-    let z1 = add_o(&mul(&a0, &b1), &mul(&a1, &b0));
+    let (z1, overflow) = add_o(&mul(&a0, &b1), &mul(&a1, &b0));
     let z2 = mul(&a1, &b1);
 
     let (low_mid, high_mid) = z1.split_at(a0.len());
@@ -106,17 +102,19 @@ pub fn mul(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
         low_result.push(0);
     }
     low_result.append(&mut low_mid);
+
+    if overflow {
+        high_mid.push(1);
+    }
     while high_mid.len() < z2.len() {
         high_mid.push(0);
     }
 
-    let mut low_result = add_o(&low_result, &z0);
-    let mut high_result = add_o(&z2, &high_mid);
-    if low_result.len() > z0.len() {
-        high_result = add_o(&high_result, &low_result[z0.len()..].to_vec());
-    }
-    while low_result.len() > z0.len() {
-        low_result.pop();
+    let (mut low_result, overflow) = add_o(&low_result, &z0);
+    let (mut high_result, _) = add_o(&z2, &high_mid);
+    if overflow {
+        let (a, _) = add_o(&high_result, &vec![1]);
+        high_result = a;
     }
 
     low_result.append(&mut high_result);
