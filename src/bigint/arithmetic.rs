@@ -1,8 +1,11 @@
+use std::cmp;
 use std::cmp::Ordering;
 
 // TODO: Add overflow checks? Or is overflow useful?
-// TODO: Use slices instead of vectors?
+// TODO: Use slices instead of vectors. This will enable avoiding heap
+// allocations in the caller. Caller could still use Vec.
 // TODO: In place operations?
+// Even better... just return a boolean in a tuple if it overflowed.
 pub fn add(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
     assert_eq!(a.len(), b.len());
     let mut overflow = false;
@@ -23,6 +26,48 @@ pub fn add(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
     }).collect()
 }
 
+pub fn add_o(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
+
+    let short: &Vec<u64>;
+    let long: &Vec<u64>;
+    if a.len() < b.len() {
+        short = &a;
+        long = &b;
+    } else {
+        short = &b;
+        long = &a;
+    }
+
+    let mut overflow = false;
+    let mut answer = Vec::with_capacity(long.len() + 1);
+
+    for (x, y) in short.iter().zip(long.iter()) {
+        let digit = if overflow {
+            x.wrapping_add(*y).wrapping_add(1)
+        } else {
+            x.wrapping_add(*y)
+        };
+        overflow = digit < *x;
+        answer.push(digit);
+    }
+
+    for x in &long[short.len()..] {
+        let digit = if overflow {
+            x.wrapping_add(1)
+        } else {
+            *x
+        };
+        overflow = digit < *x;
+        answer.push(digit);
+    }
+
+    if overflow {
+        answer.push(1);
+    }
+
+    answer
+}
+
 pub fn sub(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
     assert_eq!(a.len(), b.len());
     let mut underflow = false;
@@ -38,8 +83,6 @@ pub fn sub(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
     }).collect()
 }
 
-// TODO: The issue is that some of the add() operations can overflow here,
-// causing one bit to be dropped.
 pub fn mul(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
     assert_eq!(a.len(), b.len());
     if a.len() == 1 {
@@ -50,15 +93,15 @@ pub fn mul(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
     let (a0, a1) = (a0.to_vec(), a1.to_vec());
     let (b0, b1) = b.split_at(b.len() / 2);
     let (b0, b1) = (b0.to_vec(), b1.to_vec());
+
     let z0 = mul(&a0, &b0);
-    // TODO: Handle overflow
-    let z1 = add(&mul(&a0, &b1), &mul(&a1, &b0));
+    let z1 = add_o(&mul(&a0, &b1), &mul(&a1, &b0));
     let z2 = mul(&a1, &b1);
 
-    let (low_mid, high_mid) = z1.split_at(z1.len() / 2);
+    let (low_mid, high_mid) = z1.split_at(a0.len());
     let (mut low_mid, mut high_mid) = (low_mid.to_vec(), high_mid.to_vec());
 
-    let mut low_result: Vec<u64> = Vec::new();
+    let mut low_result: Vec<u64> = Vec::with_capacity(z1.len());
     while low_result.len() < a0.len() {
         low_result.push(0);
     }
@@ -67,9 +110,15 @@ pub fn mul(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
         high_mid.push(0);
     }
 
-    // TODO: Handle oveflow
-    let mut low_result = add(&low_result, &z0);
-    let mut high_result = add(&z2, &high_mid);
+    let mut low_result = add_o(&low_result, &z0);
+    let mut high_result = add_o(&z2, &high_mid);
+    if low_result.len() > z0.len() {
+        high_result = add_o(&high_result, &low_result[z0.len()..].to_vec());
+    }
+    while low_result.len() > z0.len() {
+        low_result.pop();
+    }
+
     low_result.append(&mut high_result);
     low_result
 }
