@@ -50,7 +50,37 @@ pub fn sub(a: &mut [u64], b: &[u64]) -> bool {
     underflow
 }
 
+/// Do multiplication and ignore the high bits.
 pub fn mul(a: &[u64], b: &[u64]) -> Vec<u64> {
+    assert_eq!(a.len(), b.len());
+    if a.len() == 1 {
+        let (low, _) = mul_ints(a[0], b[0]);
+        return vec![low];
+    }
+    let (a0, a1) = a.split_at(a.len() / 2);
+    let (b0, b1) = b.split_at(b.len() / 2);
+
+    let z0 = mul_full(&a0, &b0);
+    let z1 = {
+        let mut m1 = mul(&a0, &b1);
+        add(&mut m1, &mul(&a1, &b0));
+        m1
+    };
+
+    let (low_mid, _) = z1.split_at(a0.len());
+
+    let mut low_result: Vec<u64> = Vec::with_capacity(z0.len());
+    while low_result.len() < a0.len() {
+        low_result.push(0);
+    }
+    low_result.extend_from_slice(&low_mid);
+
+    add(&mut low_result, &z0);
+    low_result
+}
+
+/// Do multiplication and return both the high and low bits.
+fn mul_full(a: &[u64], b: &[u64]) -> Vec<u64> {
     assert_eq!(a.len(), b.len());
     if a.len() == 1 {
         let (low, high) = mul_ints(a[0], b[0]);
@@ -59,15 +89,15 @@ pub fn mul(a: &[u64], b: &[u64]) -> Vec<u64> {
     let (a0, a1) = a.split_at(a.len() / 2);
     let (b0, b1) = b.split_at(b.len() / 2);
 
-    let z0 = mul(&a0, &b0);
+    let z0 = mul_full(&a0, &b0);
     let z1 = {
-        let mut m1 = mul(&a0, &b1);
-        if add(&mut m1, &mul(&a1, &b0)) {
+        let mut m1 = mul_full(&a0, &b1);
+        if add(&mut m1, &mul_full(&a1, &b0)) {
             m1.push(1);
         }
         m1
     };
-    let mut z2 = mul(&a1, &b1);
+    let mut z2 = mul_full(&a1, &b1);
 
     let (low_mid, high_mid) = z1.split_at(a0.len());
 
