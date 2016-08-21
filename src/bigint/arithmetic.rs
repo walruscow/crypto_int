@@ -69,10 +69,12 @@ pub fn mul(a: &[u64], b: &[u64]) -> Vec<u64> {
     let (b0, b1) = (b0.to_vec(), b1.to_vec());
 
     let z0 = mul(&a0, &b0);
-    let (z1, overflow) = {
+    let z1 = {
         let mut m1 = mul(&a0, &b1);
-        let o = add_o(&mut m1, &mul(&a1, &b0));
-        (m1, o)
+        if add_o(&mut m1, &mul(&a1, &b0)) {
+            m1.push(1);
+        }
+        m1
     };
     let z2 = mul(&a1, &b1);
 
@@ -85,15 +87,11 @@ pub fn mul(a: &[u64], b: &[u64]) -> Vec<u64> {
     }
     low_result.append(&mut low_mid);
 
-    if overflow {
-        high_mid.push(1);
-    }
     while high_mid.len() < z2.len() {
         high_mid.push(0);
     }
 
     let overflow = add_o(&mut low_result, &z0);
-    //let (mut high_result, _) = add_o(&z2, &high_mid);
     add_o(&mut high_mid, &z2);
     if overflow {
         add_o(&mut high_mid, &vec![1]);
