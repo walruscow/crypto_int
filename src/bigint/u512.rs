@@ -150,16 +150,14 @@ impl ops::DivAssign for U512 {
 impl ops::Shl<usize> for U512 {
     type Output = U512;
     fn shl(mut self, rhs: usize) -> U512 {
-        let ans = arithmetic::shl(&self.digits, rhs);
-        self.digits.clone_from_slice(&ans);
+        arithmetic::shl(&mut self.digits, rhs);
         self
     }
 }
 
 impl ops::ShlAssign<usize> for U512 {
     fn shl_assign(&mut self, rhs: usize) {
-        let ans = arithmetic::shl(&self.digits, rhs);
-        self.digits.clone_from_slice(&ans);
+        arithmetic::shl(&mut self.digits, rhs);
     }
 }
 

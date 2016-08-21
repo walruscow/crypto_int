@@ -131,13 +131,13 @@ pub fn cmp(a: &[u64], b: &[u64]) -> Ordering {
     order
 }
 
-pub fn shl(a: &[u64], shift: usize) -> Vec<u64> {
-    let mut v = a.to_vec();
-    shl_(&mut v, shift);
-    v
+// Shorthand to save a heap allocation where we can
+fn shl_to(a: &[u64], out: &mut[u64], shift: usize) {
+    out.clone_from_slice(a);
+    shl(out, shift);
 }
 
-pub fn shl_(a: &mut [u64], shift: usize) {
+pub fn shl(a: &mut [u64], shift: usize) {
     assert!(shift < 64 * a.len());
     if shift == 0 {
         return;
@@ -180,6 +180,7 @@ pub fn div_rem(a: &[u64], b: &[u64], quot: &mut[u64], rem: &mut[u64]) {
         quot[i] = 0;
     }
 
+    let mut shifted_b = b.to_vec();
     loop {
         match cmp(&b, &rem) {
             Ordering::Equal => {
@@ -197,12 +198,12 @@ pub fn div_rem(a: &[u64], b: &[u64], quot: &mut[u64], rem: &mut[u64]) {
             0
         };
 
-        let shifted_b = shl(b, shift_amount);
-        let shifted_b_more = shl(&shifted_b, 1);
-        if cmp(&shifted_b_more, rem) != Ordering::Greater {
-            sub(rem, &shifted_b_more);
+        shl_to(b, &mut shifted_b, shift_amount + 1);
+        if cmp(&shifted_b, rem) != Ordering::Greater {
+            sub(rem, &shifted_b);
             shift_amount += 1;
         } else {
+            shl_to(b, &mut shifted_b, shift_amount);
             sub(rem, &shifted_b);
         }
         let num_idx = shift_amount / 64;
