@@ -6,7 +6,7 @@ pub fn add_create(a: &[u64], b: &[u64]) -> Vec<u64> {
     ans
 }
 
-// Stores the result in a.
+// Stores the result in a. a must be larger than b.
 pub fn add(a: &mut [u64], b: &[u64]) -> bool {
     assert!(a.len() >= b.len());
 
@@ -39,9 +39,17 @@ pub fn add(a: &mut [u64], b: &[u64]) -> bool {
 }
 
 pub fn sub(a: &[u64], b: &[u64]) -> Vec<u64> {
+    let mut v = a.to_vec();
+    sub_(&mut v, &b);
+    v
+}
+
+// a -= b
+pub fn sub_(a: &mut [u64], b: &[u64]) {
     assert_eq!(a.len(), b.len());
+
     let mut underflow = false;
-    a.iter().zip(b.iter()).map(move |(x, y)| {
+    for (x, y) in a.iter_mut().zip(b.iter()) {
         let digit = if underflow {
             x.wrapping_sub(*y).wrapping_sub(1)
         } else {
@@ -49,8 +57,8 @@ pub fn sub(a: &[u64], b: &[u64]) -> Vec<u64> {
         };
         // Digit underflowed iff result is more than the original value
         underflow = digit > *x;
-        digit
-    }).collect()
+        *x = digit;
+    }
 }
 
 pub fn mul(a: &[u64], b: &[u64]) -> Vec<u64> {
