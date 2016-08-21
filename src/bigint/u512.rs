@@ -77,8 +77,15 @@ impl ops::AddAssign for U512 {
 
 impl ops::Sub for U512 {
     type Output = U512;
-    fn sub(self, rhs: U512) -> U512 {
-        U512::literal(arithmetic::sub(&self.digits, &rhs.digits))
+    fn sub(mut self, rhs: U512) -> U512 {
+        arithmetic::sub(&mut self.digits, &rhs.digits);
+        self
+    }
+}
+
+impl ops::SubAssign for U512 {
+    fn sub_assign(&mut self, rhs: U512) {
+        arithmetic::sub(&mut self.digits, &rhs.digits);
     }
 }
 

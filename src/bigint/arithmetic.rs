@@ -38,14 +38,8 @@ pub fn add(a: &mut [u64], b: &[u64]) -> bool {
     overflow
 }
 
-pub fn sub(a: &[u64], b: &[u64]) -> Vec<u64> {
-    let mut v = a.to_vec();
-    sub_(&mut v, &b);
-    v
-}
-
 // a -= b
-pub fn sub_(a: &mut [u64], b: &[u64]) {
+pub fn sub(a: &mut [u64], b: &[u64]) -> bool {
     assert_eq!(a.len(), b.len());
 
     let mut underflow = false;
@@ -59,6 +53,7 @@ pub fn sub_(a: &mut [u64], b: &[u64]) {
         underflow = digit > *x;
         *x = digit;
     }
+    underflow
 }
 
 pub fn mul(a: &[u64], b: &[u64]) -> Vec<u64> {
@@ -210,10 +205,10 @@ pub fn div_rem(a: &[u64], b: &[u64]) -> (Vec<u64>, Vec<u64>) {
         let shifted_b = shl(&b, shift_amount);
         let shifted_b_more = shl(&b, shift_amount + 1);
         if cmp(&shifted_b_more, &rem) != Ordering::Greater {
-            rem = sub(&rem, &shifted_b_more);
+            sub(&mut rem, &shifted_b_more);
             shift_amount += 1;
         } else {
-            rem = sub(&rem, &shifted_b);
+            sub(&mut rem, &shifted_b);
         }
         let num_idx = shift_amount / 64;
         quotient[num_idx] |= 1 << (shift_amount % 64);
