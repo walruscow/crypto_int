@@ -6,10 +6,10 @@ use std::ops;
 
 use super::arithmetic;
 
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct U512 {
     // These are stored with the least significant 64 bits first.
-    digits: Vec<u64>,
+    digits: [u64; 8],
 }
 
 // TODO
@@ -20,15 +20,14 @@ pub struct U512 {
 // Not
 // *Assign
 impl U512 {
-    fn literal(digits: Vec<u64>) -> U512 {
-        debug_assert_eq!(digits.len(), 8);
+    fn literal(digits: [u64; 8]) -> U512 {
         U512 {
             digits: digits,
         }
     }
 
     pub fn from_u64(x: u64) -> U512 {
-        U512::literal(vec![x, 0, 0, 0, 0, 0, 0, 0])
+        U512::literal([x, 0, 0, 0, 0, 0, 0, 0])
     }
 
     pub fn from_bytes_be(bytes: Vec<u8>) -> U512 {
@@ -36,23 +35,18 @@ impl U512 {
         let mut bytes = bytes;
         bytes.reverse();
 
-        let mut digits: Vec<u64> = Vec::with_capacity(8);
-        for chunk in bytes.chunks(8) {
-            let mut x = 0u64;
+        let mut digits: [u64; 8] = [0; 8];
+        for (digit, chunk) in bytes.chunks(8).enumerate() {
             for (i, byte) in chunk.iter().enumerate() {
-                x |= (*byte as u64) << i * 8;
+                digits[digit] |= (*byte as u64) << i * 8;
             }
-            digits.push(x);
         }
 
-        while digits.len() < 8 {
-            digits.push(0);
-        }
         U512::literal(digits)
     }
 
     pub fn zero() -> U512 {
-        U512::literal(vec![0, 0, 0, 0, 0, 0, 0, 0])
+        U512::literal([0, 0, 0, 0, 0, 0, 0, 0])
     }
 
     pub fn is_zero(&self) -> bool {
@@ -97,16 +91,18 @@ impl ops::SubAssign for U512 {
 impl ops::Mul for U512 {
     type Output = U512;
     fn mul(mut self, rhs: U512) -> U512 {
-        self.digits = arithmetic::mul(&self.digits, &rhs.digits);
-        self.digits.truncate(8);
+        let mut new_digits = arithmetic::mul(&self.digits, &rhs.digits);
+        new_digits.truncate(8);
+        self.digits.clone_from_slice(&new_digits);
         self
     }
 }
 
 impl ops::MulAssign for U512 {
     fn mul_assign(&mut self, rhs: U512) {
-        self.digits = arithmetic::mul(&self.digits, &rhs.digits);
-        self.digits.truncate(8);
+        let mut new_digits = arithmetic::mul(&self.digits, &rhs.digits);
+        new_digits.truncate(8);
+        self.digits.clone_from_slice(&new_digits);
     }
 }
 
@@ -114,7 +110,7 @@ impl ops::Rem for U512 {
     type Output = U512;
     fn rem(mut self, rhs: U512) -> U512 {
         let (_, rem) = arithmetic::div_rem(&self.digits, &rhs.digits);
-        self.digits = rem;
+        self.digits.clone_from_slice(&rem);
         self
     }
 }
@@ -122,7 +118,7 @@ impl ops::Rem for U512 {
 impl ops::RemAssign for U512 {
     fn rem_assign(&mut self, rhs: U512) {
         let (_, rem) = arithmetic::div_rem(&self.digits, &rhs.digits);
-        self.digits = rem;
+        self.digits.clone_from_slice(&rem);
     }
 }
 
@@ -130,7 +126,7 @@ impl ops::Div for U512 {
     type Output = U512;
     fn div(mut self, rhs: U512) -> U512 {
         let (quotient, _) = arithmetic::div_rem(&self.digits, &rhs.digits);
-        self.digits = quotient;
+        self.digits.clone_from_slice(&quotient);
         self
     }
 }
@@ -138,14 +134,23 @@ impl ops::Div for U512 {
 impl ops::DivAssign for U512 {
     fn div_assign(&mut self, rhs: U512) {
         let (quotient, _) = arithmetic::div_rem(&self.digits, &rhs.digits);
-        self.digits = quotient;
+        self.digits.clone_from_slice(&quotient);
     }
 }
 
 impl ops::Shl<usize> for U512 {
     type Output = U512;
-    fn shl(self, rhs: usize) -> U512 {
-        U512::literal(arithmetic::shl(&self.digits, rhs))
+    fn shl(mut self, rhs: usize) -> U512 {
+        let ans = arithmetic::shl(&self.digits, rhs);
+        self.digits.clone_from_slice(&ans);
+        self
+    }
+}
+
+impl ops::ShlAssign<usize> for U512 {
+    fn shl_assign(&mut self, rhs: usize) {
+        let ans = arithmetic::shl(&self.digits, rhs);
+        self.digits.clone_from_slice(&ans);
     }
 }
 
