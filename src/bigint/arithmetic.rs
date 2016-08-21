@@ -131,28 +131,33 @@ pub fn cmp(a: &[u64], b: &[u64]) -> Ordering {
     order
 }
 
-// TODO: Make this fast AF
 pub fn shl(a: &[u64], shift: usize) -> Vec<u64> {
-    assert!(shift < 256);
+    let mut v = a.to_vec();
+    shl_(&mut v, shift);
+    v
+}
+
+pub fn shl_(a: &mut [u64], shift: usize) {
+    assert!(shift < 64 * a.len());
     if shift == 0 {
-        return a.to_vec();
+        return;
     }
 
-    // Create mask of shift high bits
-    let lead = shift / 64;
-    // lowest bits just get shifted.
-    let mut new_vec: Vec<u64> = Vec::with_capacity(a.len());
-    for _ in 0..lead {
-        new_vec.push(0);
-    }
-
+    // How many digits will be zero'd out completely
+    let digits_shifted = shift / 64;
     let shift = shift % 64;
-    new_vec.push(a[0] << shift);
-    for (i, bits) in a.iter().enumerate().skip(1).take(a.len() - lead - 1) {
-        let last_high_bits = a[i - 1] >> (64 - shift);
-        new_vec.push((*bits << shift) | last_high_bits);
+
+    for idx in (digits_shifted + 1..a.len()).rev() {
+        let high_bits = a[idx - digits_shifted] << shift;
+        let low_bits = a[idx - digits_shifted - 1] >> (64 - shift);
+        a[idx] = high_bits | low_bits;
     }
-    new_vec
+
+    // The digit on the edge is shifted normally
+    a[digits_shifted] = a[0] << shift;
+    for idx in 0..digits_shifted {
+        a[idx] = 0;
+    }
 }
 
 fn get_msb_idx(a: &[u64]) -> usize {
