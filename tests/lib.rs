@@ -39,14 +39,14 @@ fn byte_str_to_u512(s: &str) -> U512 {
 }
 
 #[test]
-fn basic_interface() {
+fn basic() {
     let x = U512::from_u64(10);
     let y = U512::from_bytes_be(vec![0x0a]);
     assert_eq!(U512::from_u64(20), x + y);
 }
 
 #[test]
-fn addition_interface() {
+fn addition() {
     let file = match File::open("./tests/addition.data") {
         Ok(fh) => fh,
         Err(_) => panic!(),
@@ -67,7 +67,7 @@ fn addition_interface() {
 }
 
 #[test]
-fn subtraction_interface() {
+fn subtraction() {
     let file = match File::open("./tests/subtraction.data") {
         Ok(fh) => fh,
         Err(_) => panic!(),
@@ -88,7 +88,7 @@ fn subtraction_interface() {
 }
 
 #[test]
-fn multiplication_interface() {
+fn multiplication() {
     let file = match File::open("./tests/multiplication.data") {
         Ok(fh) => fh,
         Err(_) => panic!(),
@@ -109,7 +109,7 @@ fn multiplication_interface() {
 }
 
 #[test]
-fn division_interface() {
+fn division() {
     let file = match File::open("./tests/division.data") {
         Ok(fh) => fh,
         Err(_) => panic!(),
@@ -130,7 +130,7 @@ fn division_interface() {
 }
 
 #[test]
-fn remainder_interface() {
+fn remainder() {
     let file = match File::open("./tests/remainder.data") {
         Ok(fh) => fh,
         Err(_) => panic!(),
@@ -147,5 +147,116 @@ fn remainder_interface() {
         let y = byte_str_to_u512(v[1].trim());
         let ans = byte_str_to_u512(v[2].trim());
         assert_eq!(x % y, ans);
+    }
+}
+
+#[test]
+fn shr() {
+    let file = match File::open("./tests/shift_right.data") {
+        Ok(fh) => fh,
+        Err(_) => panic!(),
+    };
+
+    let file = BufReader::new(file);
+    for line in file.lines() {
+        let line = match line {
+            Ok(l) => l,
+            Err(_) => panic!(),
+        };
+        let v: Vec<&str> = line.split("\t").collect();
+        let x = byte_str_to_u512(v[0].trim());
+        let y: usize = match v[1].trim().parse() {
+            Ok(n) => n,
+            Err(_) => panic!(),
+        };
+        let ans = byte_str_to_u512(v[2].trim());
+        assert_eq!(x >> y, ans);
+    }
+}
+
+#[test]
+fn shl() {
+    let file = match File::open("./tests/shift_left.data") {
+        Ok(fh) => fh,
+        Err(_) => panic!(),
+    };
+
+    let file = BufReader::new(file);
+    for line in file.lines() {
+        let line = match line {
+            Ok(l) => l,
+            Err(_) => panic!(),
+        };
+        let v: Vec<&str> = line.split("\t").collect();
+        let x = byte_str_to_u512(v[0].trim());
+        let y: usize = match v[1].trim().parse() {
+            Ok(n) => n,
+            Err(_) => panic!(),
+        };
+        let ans = byte_str_to_u512(v[2].trim());
+        assert_eq!(x << y, ans);
+    }
+}
+
+#[test]
+fn and() {
+    let file = match File::open("./tests/bit_and.data") {
+        Ok(fh) => fh,
+        Err(_) => panic!(),
+    };
+
+    let file = BufReader::new(file);
+    for line in file.lines() {
+        let line = match line {
+            Ok(l) => l,
+            Err(_) => panic!(),
+        };
+        let v: Vec<&str> = line.split("\t").collect();
+        let x = byte_str_to_u512(v[0].trim());
+        let y = byte_str_to_u512(v[1].trim());
+        let ans = byte_str_to_u512(v[2].trim());
+        assert_eq!(x & y, ans);
+    }
+}
+
+#[test]
+fn or() {
+    let file = match File::open("./tests/bit_or.data") {
+        Ok(fh) => fh,
+        Err(_) => panic!(),
+    };
+
+    let file = BufReader::new(file);
+    for line in file.lines() {
+        let line = match line {
+            Ok(l) => l,
+            Err(_) => panic!(),
+        };
+        let v: Vec<&str> = line.split("\t").collect();
+        let x = byte_str_to_u512(v[0].trim());
+        let y = byte_str_to_u512(v[1].trim());
+        let ans = byte_str_to_u512(v[2].trim());
+        assert_eq!(x | y, ans);
+    }
+}
+
+#[test]
+fn xor() {
+    let file = match File::open("./tests/bit_xor.data") {
+        Ok(fh) => fh,
+        Err(_) => panic!(),
+    };
+
+    let file = BufReader::new(file);
+    for line in file.lines() {
+        let line = match line {
+            Ok(l) => l,
+            Err(_) => panic!(),
+        };
+        let v: Vec<&str> = line.split("\t").collect();
+        let x = byte_str_to_u512(v[0].trim());
+        let y = byte_str_to_u512(v[1].trim());
+        let ans = byte_str_to_u512(v[2].trim());
+        assert_eq!(x ^ y, ans);
     }
 }

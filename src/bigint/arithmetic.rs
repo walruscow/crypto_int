@@ -176,13 +176,17 @@ pub fn shl(a: &mut[u64], shift: usize) {
         return;
     }
 
-    // How many digits will be zero'd out completely
+    // How many digits will be zeroed out completely
     let digits_shifted = shift / 64;
     let shift = shift % 64;
 
     for idx in (digits_shifted + 1..a.len()).rev() {
         let high_bits = a[idx - digits_shifted] << shift;
-        let low_bits = a[idx - digits_shifted - 1] >> (64 - shift);
+        let low_bits = if shift == 0 {
+            0
+        } else {
+            a[idx - digits_shifted - 1] >> (64 - shift)
+        };
         a[idx] = high_bits | low_bits;
     }
 
@@ -208,7 +212,11 @@ pub fn shr(a: &mut[u64], shift: usize) {
 
     for idx in 0..(last_nonzero_digit) {
         let low_bits = a[idx + digits_zeroed] >> shift;
-        let high_bits = a[idx  + digits_zeroed + 1] << (64 - shift);
+        let high_bits = if shift == 0 {
+            0
+        } else {
+            a[idx  + digits_zeroed + 1] << (64 - shift)
+        };
         a[idx] = high_bits | low_bits;
     }
     a[last_nonzero_digit] = a[len - 1] >> shift;
