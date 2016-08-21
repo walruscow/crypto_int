@@ -95,7 +95,7 @@ fn multiplication_interface() {
     };
 
     let file = BufReader::new(file);
-    for (i, line) in file.lines().enumerate() {
+    for line in file.lines() {
         let line = match line {
             Ok(l) => l,
             Err(_) => panic!(),
@@ -105,7 +105,6 @@ fn multiplication_interface() {
         let y = byte_str_to_u512(v[1].trim());
         let ans = byte_str_to_u512(v[2].trim());
         assert_eq!(x * y, ans);
-        //assert!(x * y == ans, "i: {}", i);
     }
 }
 

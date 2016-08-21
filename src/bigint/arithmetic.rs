@@ -1,11 +1,5 @@
 use std::cmp::Ordering;
 
-pub fn add_create(a: &[u64], b: &[u64]) -> Vec<u64> {
-    let mut ans = a.to_vec();
-    add(&mut ans, &b);
-    ans
-}
-
 // Stores the result in a. a must be larger than b.
 pub fn add(a: &mut [u64], b: &[u64]) -> bool {
     assert!(a.len() >= b.len());
