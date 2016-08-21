@@ -268,3 +268,27 @@ pub fn div_rem(a: &[u64], b: &[u64], quot: &mut[u64], rem: &mut[u64]) {
         quot[num_idx] |= 1 << (shift_amount % 64);
     }
 }
+
+pub fn bitor(a: &mut[u64], b: &[u64]) {
+    for (x, y) in a.iter_mut().zip(b.iter()) {
+        *x |= *y;
+    }
+}
+
+pub fn bitand(a: &mut[u64], b: &[u64]) {
+    for (x, y) in a.iter_mut().zip(b.iter()) {
+        *x &= *y;
+    }
+}
+
+pub fn bitxor(a: &mut[u64], b: &[u64]) {
+    for (x, y) in a.iter_mut().zip(b.iter()) {
+        *x ^= *y;
+    }
+}
+
+pub fn bitnot(a: &mut[u64]) {
+    for x in a.iter_mut() {
+        *x = !*x;
+    }
+}

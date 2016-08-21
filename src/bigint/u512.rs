@@ -12,13 +12,6 @@ pub struct U512 {
     digits: [u64; 8],
 }
 
-// TODO
-// shr
-// BitOr
-// BitAnd
-// BitXor
-// Not
-// *Assign
 impl U512 {
     #[inline(always)]
     fn literal(digits: [u64; 8]) -> U512 {
@@ -172,6 +165,56 @@ impl ops::Shr<usize> for U512 {
 impl ops::ShrAssign<usize> for U512 {
     fn shr_assign(&mut self, rhs: usize) {
         arithmetic::shr(&mut self.digits, rhs);
+    }
+}
+
+impl ops::BitOr for U512 {
+    type Output = U512;
+    fn bitor(mut self, rhs: U512) -> U512 {
+        arithmetic::bitor(&mut self.digits, &rhs.digits);
+        self
+    }
+}
+
+impl ops::BitOrAssign for U512 {
+    fn bitor_assign(&mut self, rhs: U512) {
+        arithmetic::bitor(&mut self.digits, &rhs.digits);
+    }
+}
+
+impl ops::BitAnd for U512 {
+    type Output = U512;
+    fn bitand(mut self, rhs: U512) -> U512 {
+        arithmetic::bitand(&mut self.digits, &rhs.digits);
+        self
+    }
+}
+
+impl ops::BitAndAssign for U512 {
+    fn bitand_assign(&mut self, rhs: U512) {
+        arithmetic::bitand(&mut self.digits, &rhs.digits);
+    }
+}
+
+impl ops::BitXor for U512 {
+    type Output = U512;
+    fn bitxor(mut self, rhs: U512) -> U512 {
+        arithmetic::bitxor(&mut self.digits, &rhs.digits);
+        self
+    }
+}
+
+impl ops::BitXorAssign for U512 {
+    fn bitxor_assign(&mut self, rhs: U512) {
+        arithmetic::bitxor(&mut self.digits, &rhs.digits);
+    }
+}
+
+impl ops::Not for U512 {
+    type Output = U512;
+    fn not(mut self) -> U512 {
+        arithmetic::bitnot(&mut self.digits);
+        self
     }
 }
 
