@@ -1,25 +1,20 @@
-use std::cmp;
 use std::cmp::Ordering;
 
 // TODO: Add overflow checks? Or is overflow useful?
 // TODO: Use slices instead of vectors. This will enable avoiding heap
 // allocations in the caller. Caller could still use Vec.
 // TODO: In place operations?
-pub fn add(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
+pub fn add(a: &[u64], b: &[u64]) -> Vec<u64> {
     let (ans, _) = add_o(&a, &b);
     ans
 }
 
-pub fn add_o(a: &Vec<u64>, b: &Vec<u64>) -> (Vec<u64>, bool) {
-    let short: &Vec<u64>;
-    let long: &Vec<u64>;
-    if a.len() < b.len() {
-        short = &a;
-        long = &b;
+pub fn add_o(a: &[u64], b: &[u64]) -> (Vec<u64>, bool) {
+    let (short, long) = if a.len() < b.len() {
+        (a, b)
     } else {
-        short = &b;
-        long = &a;
-    }
+        (b, a)
+    };
 
     let mut overflow = false;
     let mut answer = Vec::with_capacity(long.len() + 1);
@@ -47,7 +42,7 @@ pub fn add_o(a: &Vec<u64>, b: &Vec<u64>) -> (Vec<u64>, bool) {
     (answer, overflow)
 }
 
-pub fn sub(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
+pub fn sub(a: &[u64], b: &[u64]) -> Vec<u64> {
     assert_eq!(a.len(), b.len());
     let mut underflow = false;
     a.iter().zip(b.iter()).map(move |(x, y)| {
@@ -62,7 +57,7 @@ pub fn sub(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
     }).collect()
 }
 
-pub fn mul(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
+pub fn mul(a: &[u64], b: &[u64]) -> Vec<u64> {
     assert_eq!(a.len(), b.len());
     if a.len() == 1 {
         let (low, high) = mul_ints(a[0], b[0]);
@@ -129,7 +124,7 @@ fn mul_ints(a: u64, b: u64) -> (u64, u64) {
     (low_bits, high_bits)
 }
 
-pub fn cmp(a: &Vec<u64>, b: &Vec<u64>) -> Ordering {
+pub fn cmp(a: &[u64], b: &[u64]) -> Ordering {
     assert_eq!(a.len(), b.len());
     let mut order = Ordering::Equal;
     for (x, y) in a.iter().zip(b.iter()).rev() {
@@ -149,10 +144,10 @@ pub fn cmp(a: &Vec<u64>, b: &Vec<u64>) -> Ordering {
 }
 
 // TODO: Make this fast AF
-pub fn shl(a: &Vec<u64>, shift: usize) -> Vec<u64> {
+pub fn shl(a: &[u64], shift: usize) -> Vec<u64> {
     assert!(shift < 256);
     if shift == 0 {
-        return a.clone();
+        return a.to_vec();
     }
 
     // Create mask of shift high bits
@@ -172,7 +167,7 @@ pub fn shl(a: &Vec<u64>, shift: usize) -> Vec<u64> {
     new_vec
 }
 
-fn get_msb_idx(a: &Vec<u64>) -> usize {
+fn get_msb_idx(a: &[u64]) -> usize {
     let mut idx = 0;
     for (i, val) in a.iter().enumerate() {
         let x = (64 - val.leading_zeros()) as usize;
@@ -183,9 +178,9 @@ fn get_msb_idx(a: &Vec<u64>) -> usize {
     idx
 }
 
-pub fn div_rem(a: &Vec<u64>, b: &Vec<u64>) -> (Vec<u64>, Vec<u64>) {
+pub fn div_rem(a: &[u64], b: &[u64]) -> (Vec<u64>, Vec<u64>) {
     assert_eq!(a.len(), b.len());
-    let mut rem = a.clone();
+    let mut rem = a.to_vec();
     let b_msb_idx = get_msb_idx(&b);
 
     let mut quotient: Vec<u64> = rem.iter().map(|_| 0).collect();
