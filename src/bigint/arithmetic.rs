@@ -5,29 +5,12 @@ use std::cmp::Ordering;
 // TODO: Use slices instead of vectors. This will enable avoiding heap
 // allocations in the caller. Caller could still use Vec.
 // TODO: In place operations?
-// Even better... just return a boolean in a tuple if it overflowed.
 pub fn add(a: &Vec<u64>, b: &Vec<u64>) -> Vec<u64> {
-    assert_eq!(a.len(), b.len());
-    let mut overflow = false;
-    a.iter().zip(b.iter()).enumerate().map(move |(i, (x, y))| {
-        let digit = if overflow {
-            x.wrapping_add(*y).wrapping_add(1)
-        } else {
-            x.wrapping_add(*y)
-        };
-        // Digit overflowed iff result is less than either of the operands
-        overflow = digit < *x;
-        if overflow && i == a.len()-1 {
-            println!("Gotcha!");
-        } else if i == a.len()-1 {
-            println!("Nope");
-        }
-        digit
-    }).collect()
+    let (ans, _) = add_o(&a, &b);
+    ans
 }
 
 pub fn add_o(a: &Vec<u64>, b: &Vec<u64>) -> (Vec<u64>, bool) {
-
     let short: &Vec<u64>;
     let long: &Vec<u64>;
     if a.len() < b.len() {
