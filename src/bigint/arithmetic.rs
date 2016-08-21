@@ -5,41 +5,41 @@ use std::cmp::Ordering;
 // allocations in the caller. Caller could still use Vec.
 // TODO: In place operations?
 pub fn add(a: &[u64], b: &[u64]) -> Vec<u64> {
-    let (ans, _) = add_o(&a, &b);
+    let mut ans = a.to_vec();
+    add_o(&mut ans, &b);
     ans
 }
 
-pub fn add_o(a: &[u64], b: &[u64]) -> (Vec<u64>, bool) {
-    let (short, long) = if a.len() < b.len() {
-        (a, b)
-    } else {
-        (b, a)
-    };
+// Stores the result in a.
+pub fn add_o(a: &mut [u64], b: &[u64]) -> bool {
+    assert!(a.len() >= b.len());
 
     let mut overflow = false;
-    let mut answer = Vec::with_capacity(long.len() + 1);
-
-    for (x, y) in short.iter().zip(long.iter()) {
+    for (x, y) in a.iter_mut().zip(b.iter()) {
         let digit = if overflow {
             x.wrapping_add(*y).wrapping_add(1)
         } else {
             x.wrapping_add(*y)
         };
         overflow = digit < *x;
-        answer.push(digit);
+        *x = digit;
     }
 
-    for x in &long[short.len()..] {
+    for x in &mut a[b.len()..] {
+        if !overflow {
+            break;
+        }
+
         let digit = if overflow {
             x.wrapping_add(1)
         } else {
             *x
         };
         overflow = digit < *x;
-        answer.push(digit);
+        *x = digit;
     }
 
-    (answer, overflow)
+    overflow
 }
 
 pub fn sub(a: &[u64], b: &[u64]) -> Vec<u64> {
@@ -69,7 +69,11 @@ pub fn mul(a: &[u64], b: &[u64]) -> Vec<u64> {
     let (b0, b1) = (b0.to_vec(), b1.to_vec());
 
     let z0 = mul(&a0, &b0);
-    let (z1, overflow) = add_o(&mul(&a0, &b1), &mul(&a1, &b0));
+    let (z1, overflow) = {
+        let mut m1 = mul(&a0, &b1);
+        let o = add_o(&mut m1, &mul(&a1, &b0));
+        (m1, o)
+    };
     let z2 = mul(&a1, &b1);
 
     let (low_mid, high_mid) = z1.split_at(a0.len());
@@ -88,14 +92,14 @@ pub fn mul(a: &[u64], b: &[u64]) -> Vec<u64> {
         high_mid.push(0);
     }
 
-    let (mut low_result, overflow) = add_o(&low_result, &z0);
-    let (mut high_result, _) = add_o(&z2, &high_mid);
+    let overflow = add_o(&mut low_result, &z0);
+    //let (mut high_result, _) = add_o(&z2, &high_mid);
+    add_o(&mut high_mid, &z2);
     if overflow {
-        let (a, _) = add_o(&high_result, &vec![1]);
-        high_result = a;
+        add_o(&mut high_mid, &vec![1]);
     }
 
-    low_result.append(&mut high_result);
+    low_result.append(&mut high_mid);
     low_result
 }
 
