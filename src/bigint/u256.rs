@@ -65,7 +65,7 @@ impl U256 {
 impl ops::Add for U256 {
     type Output = U256;
     fn add(self, rhs: U256) -> U256 {
-        U256::literal(arithmetic::add(&self.digits, &rhs.digits))
+        U256::literal(arithmetic::add_create(&self.digits, &rhs.digits))
     }
 }
 

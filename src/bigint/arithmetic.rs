@@ -1,17 +1,13 @@
 use std::cmp::Ordering;
 
-// TODO: Add overflow checks? Or is overflow useful?
-// TODO: Use slices instead of vectors. This will enable avoiding heap
-// allocations in the caller. Caller could still use Vec.
-// TODO: In place operations?
-pub fn add(a: &[u64], b: &[u64]) -> Vec<u64> {
+pub fn add_create(a: &[u64], b: &[u64]) -> Vec<u64> {
     let mut ans = a.to_vec();
-    add_o(&mut ans, &b);
+    add(&mut ans, &b);
     ans
 }
 
 // Stores the result in a.
-pub fn add_o(a: &mut [u64], b: &[u64]) -> bool {
+pub fn add(a: &mut [u64], b: &[u64]) -> bool {
     assert!(a.len() >= b.len());
 
     let mut overflow = false;
@@ -71,7 +67,7 @@ pub fn mul(a: &[u64], b: &[u64]) -> Vec<u64> {
     let z0 = mul(&a0, &b0);
     let z1 = {
         let mut m1 = mul(&a0, &b1);
-        if add_o(&mut m1, &mul(&a1, &b0)) {
+        if add(&mut m1, &mul(&a1, &b0)) {
             m1.push(1);
         }
         m1
@@ -91,10 +87,10 @@ pub fn mul(a: &[u64], b: &[u64]) -> Vec<u64> {
         high_mid.push(0);
     }
 
-    let overflow = add_o(&mut low_result, &z0);
-    add_o(&mut high_mid, &z2);
+    let overflow = add(&mut low_result, &z0);
+    add(&mut high_mid, &z2);
     if overflow {
-        add_o(&mut high_mid, &vec![1]);
+        add(&mut high_mid, &vec![1]);
     }
 
     low_result.append(&mut high_mid);

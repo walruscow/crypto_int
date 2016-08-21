@@ -64,7 +64,7 @@ impl U512 {
 impl ops::Add for U512 {
     type Output = U512;
     fn add(self, rhs: U512) -> U512 {
-        U512::literal(arithmetic::add(&self.digits, &rhs.digits))
+        U512::literal(arithmetic::add_create(&self.digits, &rhs.digits))
     }
 }
 
