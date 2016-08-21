@@ -20,6 +20,7 @@ pub struct U512 {
 // Not
 // *Assign
 impl U512 {
+    #[inline(always)]
     fn literal(digits: [u64; 8]) -> U512 {
         U512 {
             digits: digits,
@@ -109,7 +110,9 @@ impl ops::MulAssign for U512 {
 impl ops::Rem for U512 {
     type Output = U512;
     fn rem(mut self, rhs: U512) -> U512 {
-        let (_, rem) = arithmetic::div_rem(&self.digits, &rhs.digits);
+        let mut rem = [0u64; 8];
+        let mut quot = [0u64; 8];
+        arithmetic::div_rem(&self.digits, &rhs.digits, &mut quot, &mut rem);
         self.digits.clone_from_slice(&rem);
         self
     }
@@ -117,7 +120,9 @@ impl ops::Rem for U512 {
 
 impl ops::RemAssign for U512 {
     fn rem_assign(&mut self, rhs: U512) {
-        let (_, rem) = arithmetic::div_rem(&self.digits, &rhs.digits);
+        let mut rem = [0u64; 8];
+        let mut quot = [0u64; 8];
+        arithmetic::div_rem(&self.digits, &rhs.digits, &mut quot, &mut rem);
         self.digits.clone_from_slice(&rem);
     }
 }
@@ -125,16 +130,20 @@ impl ops::RemAssign for U512 {
 impl ops::Div for U512 {
     type Output = U512;
     fn div(mut self, rhs: U512) -> U512 {
-        let (quotient, _) = arithmetic::div_rem(&self.digits, &rhs.digits);
-        self.digits.clone_from_slice(&quotient);
+        let mut rem = [0u64; 8];
+        let mut quot = [0u64; 8];
+        arithmetic::div_rem(&self.digits, &rhs.digits, &mut quot, &mut rem);
+        self.digits.clone_from_slice(&quot);
         self
     }
 }
 
 impl ops::DivAssign for U512 {
     fn div_assign(&mut self, rhs: U512) {
-        let (quotient, _) = arithmetic::div_rem(&self.digits, &rhs.digits);
-        self.digits.clone_from_slice(&quotient);
+        let mut rem = [0u64; 8];
+        let mut quot = [0u64; 8];
+        arithmetic::div_rem(&self.digits, &rhs.digits, &mut quot, &mut rem);
+        self.digits.clone_from_slice(&quot);
     }
 }
 

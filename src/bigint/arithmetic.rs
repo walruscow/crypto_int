@@ -166,40 +166,41 @@ fn get_msb_idx(a: &[u64]) -> usize {
     idx
 }
 
-pub fn div_rem(a: &[u64], b: &[u64]) -> (Vec<u64>, Vec<u64>) {
+pub fn div_rem(a: &[u64], b: &[u64], quot: &mut[u64], rem: &mut[u64]) {
     assert_eq!(a.len(), b.len());
-    let mut rem = a.to_vec();
-    let b_msb_idx = get_msb_idx(&b);
+    rem.clone_from_slice(a);
+    let b_msb_idx = get_msb_idx(b);
 
-    let mut quotient: Vec<u64> = rem.iter().map(|_| 0).collect();
+    for i in 0..quot.len() {
+        quot[i] = 0;
+    }
+
     loop {
         match cmp(&b, &rem) {
             Ordering::Equal => {
-                quotient[0] |= 1;
+                quot[0] |= 1;
                 break;
             },
             Ordering::Greater => break,
             Ordering::Less => (),
         }
 
-        let a_msb_idx = get_msb_idx(&rem);
+        let a_msb_idx = get_msb_idx(rem);
         let mut shift_amount = if a_msb_idx > b_msb_idx {
             a_msb_idx - b_msb_idx - 1
         } else {
             0
         };
 
-        let shifted_b = shl(&b, shift_amount);
-        let shifted_b_more = shl(&b, shift_amount + 1);
-        if cmp(&shifted_b_more, &rem) != Ordering::Greater {
-            sub(&mut rem, &shifted_b_more);
+        let shifted_b = shl(b, shift_amount);
+        let shifted_b_more = shl(&shifted_b, 1);
+        if cmp(&shifted_b_more, rem) != Ordering::Greater {
+            sub(rem, &shifted_b_more);
             shift_amount += 1;
         } else {
-            sub(&mut rem, &shifted_b);
+            sub(rem, &shifted_b);
         }
         let num_idx = shift_amount / 64;
-        quotient[num_idx] |= 1 << (shift_amount % 64);
+        quot[num_idx] |= 1 << (shift_amount % 64);
     }
-
-    (quotient, rem)
 }
