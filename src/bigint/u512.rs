@@ -223,10 +223,20 @@ impl ops::Not for U512 {
 
 impl fmt::Display for U512 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // TODO: Print only what is required...
-        write!(f, "{:0>#018x}{:0>16x}{:0>16x}{:0>16x}",
-               self.digits[3], self.digits[2],
-               self.digits[1], self.digits[0])
+        try!(write!(f, "0x"));
+        let mut printed_any = false;
+        for d in self.digits.iter().rev() {
+            if printed_any {
+                try!(write!(f, "{:0>16x}", *d));
+            } else if *d != 0 {
+                try!(write!(f, "{:x}", *d));
+                printed_any = true;
+            }
+        }
+        if !printed_any {
+            try!(write!(f, "0"));
+        }
+        Ok(())
     }
 }
 
