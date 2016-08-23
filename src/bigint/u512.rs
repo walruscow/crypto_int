@@ -55,6 +55,10 @@ impl U512 {
         }
         all_zero
     }
+
+    pub fn is_even(&self) -> bool {
+        self.digits[0] & 1 == 0
+    }
 }
 
 impl ops::Add for U512 {
