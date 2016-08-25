@@ -1,4 +1,7 @@
 use std::cmp::Ordering;
+use std::u64;
+
+use rand::Rng;
 
 // Stores the result in a. a must be larger than b.
 pub fn add(a: &mut [u64], b: &[u64]) -> bool {
@@ -301,5 +304,56 @@ pub fn bitxor(a: &mut[u64], b: &[u64]) {
 pub fn bitnot(a: &mut[u64]) {
     for x in a.iter_mut() {
         *x = !*x;
+    }
+}
+
+pub fn rand_int_lt<R: Rng>(a: &[u64], out: &mut[u64], rng: &mut R) {
+    assert_eq!(a.len(), out.len());
+
+    let msb = get_msb_idx(a);
+    // How many digits to generate
+    let digits = if msb % 64 == 0 {
+        msb / 64
+    } else {
+        msb / 64 + 1
+    };
+
+    for idx in digits..out.len() {
+        out[idx] = 0;
+    }
+
+    loop {
+        // Everything is equal so far.
+        let mut eq = true;
+
+        // Generate digits one at a time.
+        for idx in (0..digits).rev() {
+            let mask: u64 = if idx == digits - 1 {
+                // First digit, we only compare the relevant bits.
+                // 0 <= shift <= 63
+                !(u64::MAX << (msb % 64))
+            } else {
+                // Other digits we compare all bits.
+                !0
+            };
+
+            // so we need to generate the first 64 bits.
+            let rand_digit = rng.next_u64() & mask;
+            if eq && rand_digit > a[idx] {
+                // Previous digits equal and ours is too large. Try again.
+                break;
+            } else if eq && rand_digit < a[idx] {
+                // This digit is smaller, so our number is smaller.
+                eq = false;
+                out[idx] = rand_digit;
+            } else {
+                out[idx] = rand_digit;
+            }
+        }
+
+        if !eq {
+            // We got a number smaller than a
+            break;
+        }
     }
 }

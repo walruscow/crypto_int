@@ -1,4 +1,4 @@
-/// 512 bit unsigned integers.
+use rand::{Rand, Rng};
 
 use std::cmp;
 use std::fmt;
@@ -58,6 +58,14 @@ impl U512 {
 
     pub fn is_even(&self) -> bool {
         self.digits[0] & 1 == 0
+    }
+
+    pub fn random_in_range<R: Rng>(low: U512, high: U512, rng: &mut R) -> U512 {
+        assert!(low < high);
+        let range = high - low;
+        let mut ans = U512::zero();
+        arithmetic::rand_int_lt(&range.digits, &mut ans.digits, rng);
+        ans + low
     }
 }
 
@@ -265,5 +273,15 @@ impl cmp::Ord for U512 {
 impl cmp::PartialOrd for U512 {
     fn partial_cmp(&self, other: &U512) -> Option<cmp::Ordering> {
         Some(self.cmp(&other))
+    }
+}
+
+impl Rand for U512 {
+    fn rand<R: Rng>(rng: &mut R) -> U512 {
+        let mut ans = U512::zero();
+        for d in ans.digits.iter_mut() {
+            *d = rng.next_u64();
+        }
+        ans
     }
 }

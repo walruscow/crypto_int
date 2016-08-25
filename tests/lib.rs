@@ -1,9 +1,11 @@
 extern crate crypto_int;
+extern crate rand;
 
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
 use crypto_int::U512;
+use rand::OsRng;
 
 fn hex_char_to_u8(c: u8) -> u8 {
     if 48 <= c && c <= 57 {
@@ -270,5 +272,25 @@ fn xor() {
         let ans = byte_str_to_u512(v[2].trim());
         assert_eq!(x ^ y, ans);
         assert_eq!(x ^ x, zero);
+    }
+}
+
+#[test]
+fn random() {
+    let mut rng = OsRng::new().unwrap();
+    for _ in 0..20 {
+        let low = U512::from_u64(0);
+        let high = U512::from_u64(1);
+        let x = U512::random_in_range(low, high, &mut rng);
+        assert_eq!(x, low);
+    }
+
+    // A range of 10
+    let low = U512::from_u64(10982412);
+    let high = U512::from_u64(10982422);
+    for _ in 0..1000 {
+        let x = U512::random_in_range(low, high, &mut rng);
+        assert!(x < high);
+        assert!(x >= low);
     }
 }
