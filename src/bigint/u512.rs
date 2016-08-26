@@ -100,16 +100,16 @@ impl ops::SubAssign for U512 {
 impl ops::Mul for U512 {
     type Output = U512;
     fn mul(mut self, rhs: U512) -> U512 {
-        let mut new_digits = arithmetic::mul(&self.digits, &rhs.digits);
-        self.digits.clone_from_slice(&new_digits);
+        let self_digits = self.digits.clone();
+        arithmetic::mul_long(&self_digits, &rhs.digits, &mut self.digits);
         self
     }
 }
 
 impl ops::MulAssign for U512 {
     fn mul_assign(&mut self, rhs: U512) {
-        let mut new_digits = arithmetic::mul(&self.digits, &rhs.digits);
-        self.digits.clone_from_slice(&new_digits);
+        let self_digits = self.digits.clone();
+        arithmetic::mul_long(&self_digits, &rhs.digits, &mut self.digits);
     }
 }
 

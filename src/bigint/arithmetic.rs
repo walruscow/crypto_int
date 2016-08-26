@@ -53,74 +53,50 @@ pub fn sub(a: &mut [u64], b: &[u64]) -> bool {
     underflow
 }
 
-/// Do multiplication and ignore the high bits.
-pub fn mul(a: &[u64], b: &[u64]) -> Vec<u64> {
+/// Multiplication that ignores the high bits.
+pub fn mul_long(a: &[u64], b: &[u64], c: &mut[u64]) {
     assert_eq!(a.len(), b.len());
-    if a.len() == 1 {
-        let (low, _) = mul_ints(a[0], b[0]);
-        return vec![low];
+
+    for val in c.iter_mut() {
+        *val = 0;
     }
-    let (a0, a1) = a.split_at(a.len() / 2);
-    let (b0, b1) = b.split_at(b.len() / 2);
 
-    let (mut z0_low, mut z0_high) = mul_full(&a0, &b0);
-    let z1 = {
-        let mut m1 = mul(&a0, &b1);
-        add(&mut m1, &mul(&a1, &b0));
-        m1
-    };
+    let len = a.len();
+    for (a_idx, a_val) in a.iter().enumerate() {
+        for (b_idx, b_val) in b.iter().enumerate() {
+            let mut ans_idx = a_idx + b_idx;
+            if ans_idx >= a.len() {
+                break;
+            }
+            let (low, high) = mul_ints(*a_val, *b_val);
 
-    let (low_mid, _) = z1.split_at(a0.len());
+            // Add the low bits
+            let (val, mut overflow) = c[ans_idx].overflowing_add(low);
+            c[ans_idx] = val;
 
-    add(&mut z0_high, &low_mid);
+            // Add the high bits
+            ans_idx += 1;
+            if ans_idx < len {
+                let old = c[ans_idx];
+                c[ans_idx] = c[ans_idx].wrapping_add(high);
+                if overflow {
+                    c[ans_idx] = c[ans_idx].wrapping_add(1);
+                }
+                overflow = c[ans_idx] < old;
+            }
 
-    z0_low.append(&mut z0_high);
-    z0_low
-}
-
-#[inline(always)]
-fn mul_full_concat(a: &[u64], b: &[u64]) -> Vec<u64> {
-    let (mut low, mut high) = mul_full(a, b);
-    low.append(&mut high);
-    low
-}
-
-
-/// Do multiplication and return both the high and low bits.
-fn mul_full(a: &[u64], b: &[u64]) -> (Vec<u64>, Vec<u64>) {
-    assert_eq!(a.len(), b.len());
-    if a.len() == 1 {
-        let (low, high) = mul_ints(a[0], b[0]);
-        return (vec![low], vec![high]);
-    }
-    let (a0, a1) = a.split_at(a.len() / 2);
-    let (b0, b1) = b.split_at(b.len() / 2);
-
-    let z0 = mul_full_concat(&a0, &b0);
-    let z1 = {
-        let mut m1 = mul_full_concat(&a0, &b1);
-        if add(&mut m1, &mul_full_concat(&a1, &b0)) {
-            m1.push(1);
+            // Propagate overflow down
+            ans_idx += 1;
+            for idx in ans_idx..len {
+                if !overflow {
+                    break;
+                }
+                let old = c[idx];
+                c[idx] = c[idx].wrapping_add(1);
+                overflow = c[idx] < old;
+            }
         }
-        m1
-    };
-    let mut z2 = mul_full_concat(&a1, &b1);
-
-    let (low_mid, high_mid) = z1.split_at(a0.len());
-
-    let mut low_result: Vec<u64> = Vec::with_capacity(z1.len());
-    while low_result.len() < a0.len() {
-        low_result.push(0);
     }
-    low_result.extend_from_slice(&low_mid);
-
-    let overflow = add(&mut low_result, &z0);
-    add(&mut z2, &high_mid);
-    if overflow {
-        add(&mut z2, &vec![1]);
-    }
-
-    (low_result, z2)
 }
 
 // Return (low bits, high bits)
