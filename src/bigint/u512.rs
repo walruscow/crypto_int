@@ -101,7 +101,6 @@ impl ops::Mul for U512 {
     type Output = U512;
     fn mul(mut self, rhs: U512) -> U512 {
         let mut new_digits = arithmetic::mul(&self.digits, &rhs.digits);
-        new_digits.truncate(8);
         self.digits.clone_from_slice(&new_digits);
         self
     }
@@ -110,7 +109,6 @@ impl ops::Mul for U512 {
 impl ops::MulAssign for U512 {
     fn mul_assign(&mut self, rhs: U512) {
         let mut new_digits = arithmetic::mul(&self.digits, &rhs.digits);
-        new_digits.truncate(8);
         self.digits.clone_from_slice(&new_digits);
     }
 }
