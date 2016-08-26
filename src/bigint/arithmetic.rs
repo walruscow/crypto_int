@@ -54,7 +54,7 @@ pub fn sub(a: &mut [u64], b: &[u64]) -> bool {
 }
 
 /// Multiplication that ignores the high bits.
-pub fn mul_long(a: &[u64], b: &[u64], c: &mut[u64]) {
+pub fn mul(a: &[u64], b: &[u64], c: &mut[u64]) {
     assert_eq!(a.len(), b.len());
 
     for val in c.iter_mut() {
