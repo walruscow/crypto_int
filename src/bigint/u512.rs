@@ -26,12 +26,13 @@ impl U512 {
         U512::literal([x, 0, 0, 0, 0, 0, 0, 0])
     }
 
-    // TODO: Take a slice, not a vec.
-    pub fn from_bytes_be(bytes: Vec<u8>) -> U512 {
-        assert!(bytes.len() <= 64);
-        let mut bytes = bytes;
+    pub fn from_bytes_be(mut bytes: Vec<u8>) -> U512 {
         bytes.reverse();
+        U512::from_bytes_le(bytes)
+    }
 
+    pub fn from_bytes_le(bytes: Vec<u8>) -> U512 {
+        assert!(bytes.len() <= 64);
         let mut digits: [u64; 8] = [0; 8];
         for (digit, chunk) in bytes.chunks(8).enumerate() {
             for (i, byte) in chunk.iter().enumerate() {
@@ -66,6 +67,22 @@ impl U512 {
         let mut ans = U512::zero();
         arithmetic::rand_int_lt(&range.digits, &mut ans.digits, rng);
         ans + low
+    }
+
+    pub fn to_bytes_le(&self) -> [u8; 64] {
+        let mut bytes = [0u8; 64];
+        for (idx, digit) in self.digits.iter().enumerate() {
+            for jdx in 0..8 {
+                bytes[idx * 8 + jdx] = ((digit >> (jdx * 8)) & 0xFF) as u8;
+            }
+        }
+        bytes
+    }
+
+    pub fn to_bytes_be(&self) -> [u8; 64] {
+        let mut bytes = self.to_bytes_le();
+        bytes.reverse();
+        bytes
     }
 }
 
@@ -281,5 +298,33 @@ impl Rand for U512 {
             *d = rng.next_u64();
         }
         ans
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn byte_repr() {
+        let mut bytes = vec![0x01, 0x02, 0x03, 0x04, 0x05];
+        let x = U512::from_bytes_le(bytes.clone());
+        assert_eq!(x, U512::from_u64(0x0504030201));
+
+        while bytes.len() < 64 {
+            bytes.push(0);
+        }
+
+        let mut res: Vec<u8> = Vec::new();;
+        let br = x.to_bytes_le();
+        res.extend_from_slice(&br);
+        assert_eq!(res, bytes);
+
+        res.clear();
+
+        let br = x.to_bytes_be();
+        res.extend_from_slice(&br);
+        bytes.reverse();
+        assert_eq!(res, bytes);
     }
 }
