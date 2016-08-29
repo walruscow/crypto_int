@@ -125,22 +125,14 @@ fn mul_ints(a: u64, b: u64) -> (u64, u64) {
 }
 
 pub fn cmp(a: &[u64], b: &[u64]) -> Ordering {
-    assert_eq!(a.len(), b.len());
-    let mut order = Ordering::Equal;
     for (x, y) in a.iter().zip(b.iter()).rev() {
         if x > y {
-            order = match order {
-                Ordering::Equal => Ordering::Greater,
-                _ => order,
-            };
+            return Ordering::Greater;
         } else if y > x {
-            order = match order {
-                Ordering::Equal => Ordering::Less,
-                _ => order,
-            };
+            return Ordering::Less;
         }
     }
-    order
+    Ordering::Equal
 }
 
 // Shorthand to save a heap allocation where we can
@@ -220,8 +212,8 @@ pub fn div_rem(a: &[u64], b: &[u64], quot: &mut[u64], rem: &mut[u64]) {
     rem.clone_from_slice(a);
     let b_msb_idx = get_msb_idx(b);
 
-    for i in 0..quot.len() {
-        quot[i] = 0;
+    for x in quot.iter_mut() {
+        *x = 0;
     }
 
     let mut shifted_b = b.to_vec();
