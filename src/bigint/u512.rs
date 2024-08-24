@@ -299,7 +299,6 @@ impl ops::Not for U512 {
 
 impl fmt::Display for U512 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "0x")?;
         let mut printed_any = false;
         for d in self.digits.iter().rev() {
             if printed_any {
