@@ -16,19 +16,70 @@ pub struct U512 {
 
 impl U512 {
     #[inline(always)]
-    fn literal(digits: [u64; 8]) -> U512 {
-        U512 {
-            digits: digits,
-        }
+    const fn literal(digits: [u64; 8]) -> U512 {
+        U512 { digits }
     }
 
-    pub fn from_u64(x: u64) -> U512 {
+    pub const fn from_u64(x: u64) -> U512 {
         U512::literal([x, 0, 0, 0, 0, 0, 0, 0])
     }
 
     pub fn from_bytes_be(mut bytes: Vec<u8>) -> U512 {
         bytes.reverse();
         U512::from_bytes_le(bytes)
+    }
+
+    // convenient way to convert a hex literal to a U512
+    // e.g. for crypto constants like for ecdh stuff
+    // ffffffff00000001000000000000000000000000fffffffffffffffffffffffc
+    // dont give the leading 0x!
+    pub const fn from_hex_be(hex_be: &[u8]) -> U512 {
+        assert!(hex_be.len() % 2 == 0);
+        assert!(hex_be.len() <= 128);
+
+        // 2 hex chars to a byte
+        const fn dehex(x: u8, y: u8) -> u8 {
+            // convert from 0-9|a-f -> 0-16 u8
+            const fn fh(x: u8) -> u8 {
+                if b'0' <= x && x <= b'9' {
+                    x - b'0'
+                } else if b'A' <= x && x <= b'F' {
+                    x - b'A' + 10
+                } else if b'a' <= x && x <= b'f' {
+                    x - b'a' + 10
+                } else {
+                    panic!("Invalid hex!");
+                }
+            }
+            (fh(x) << 4) | fh(y)
+        }
+
+        let mut le_bytes = [0u8; 64];
+        {
+            let mut le_idx = 0;
+            while le_idx < (hex_be.len() / 2) {
+                let hex_idx = hex_be.len() - le_idx * 2 - 2;
+                let be_byte = dehex(hex_be[hex_idx], hex_be[hex_idx + 1]);
+                le_bytes[le_idx] = be_byte;
+                le_idx += 1;
+            }
+        }
+
+        // now we have to convert [u8; 64] -> [u64; 8]
+        let mut le_lit = [0u64; 8];
+        {
+            let mut idx_64 = 0;
+            while idx_64 < le_lit.len() {
+                let mut idx_8 = 0;
+                while idx_8 < 8 {
+                    le_lit[idx_64] |= (le_bytes[idx_64 * 8 + idx_8] as u64) << (idx_8 * 8);
+                    idx_8 += 1;
+                }
+                idx_64 += 1;
+            }
+        }
+
+        U512::literal(le_lit)
     }
 
     pub fn from_bytes_le(bytes: Vec<u8>) -> U512 {
@@ -43,21 +94,19 @@ impl U512 {
         U512::literal(digits)
     }
 
-    pub fn zero() -> U512 {
+    pub const fn zero() -> U512 {
         U512::literal([0, 0, 0, 0, 0, 0, 0, 0])
     }
 
     pub fn is_zero(&self) -> bool {
         let mut all_zero = true;
         for x in &self.digits {
-            if *x != 0 {
-                all_zero = false;
-            }
+            all_zero = (*x == 0) && all_zero;
         }
         all_zero
     }
 
-    pub fn is_even(&self) -> bool {
+    pub const fn is_even(&self) -> bool {
         self.digits[0] & 1 == 0
     }
 
@@ -250,18 +299,18 @@ impl ops::Not for U512 {
 
 impl fmt::Display for U512 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "0x"));
+        write!(f, "0x")?;
         let mut printed_any = false;
         for d in self.digits.iter().rev() {
             if printed_any {
-                try!(write!(f, "{:0>16x}", *d));
+                write!(f, "{:0>16x}", *d)?;
             } else if *d != 0 {
-                try!(write!(f, "{:x}", *d));
+                write!(f, "{:x}", *d)?;
                 printed_any = true;
             }
         }
         if !printed_any {
-            try!(write!(f, "0"));
+            write!(f, "0")?
         }
         Ok(())
     }
@@ -315,7 +364,7 @@ mod tests {
             bytes.push(0);
         }
 
-        let mut res: Vec<u8> = Vec::new();;
+        let mut res: Vec<u8> = Vec::new();
         let br = x.to_bytes_le();
         res.extend_from_slice(&br);
         assert_eq!(res, bytes);
@@ -326,5 +375,17 @@ mod tests {
         res.extend_from_slice(&br);
         bytes.reverse();
         assert_eq!(res, bytes);
+    }
+
+    #[test]
+    fn from_hex_be() {
+        let a =
+            U512::from_hex_be(b"ffffffff00000001000000000000000000000000ffffffffffffffffffffffff");
+        let b = U512::from_bytes_be(vec![
+            0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff,
+        ]);
+        assert_eq!(a, b);
     }
 }
